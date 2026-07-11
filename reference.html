@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="format-detection" content="telephone=no">
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/alfaankh/ImageAssets/1a67a9e04e136f32a168beef5c3b2df731c1e1fa/Anak%20Tengah-08.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>Anak Tengah Rate Card Jastip China 🇨🇳→🇮🇩</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @media (max-width: 600px) {
+    .garment-table .mobile-nama-input { display: block !important; }
+    .garment-table thead th.col-nama { display: none; }
+    .garment-table tbody td.col-nama { display: none; }
+    .garment-table thead th.col-ukuran { display: none; }
+    .garment-table tbody td.col-ukuran { display: none; }
+    .garment-table { font-size: 11px; }
+    .garment-table thead th { padding: 8px 6px; letter-spacing: 0.5px; }
+    .garment-table tbody td { padding: 6px 6px; }
+    .garment-table tfoot td { padding: 6px; }
+    .garment-table select, .garment-table input[type="text"], .garment-table input[type="number"] {
+      padding: 5px 4px; font-size: 11px;
+    }
+    .referensi-table { font-size: 10px; table-layout: fixed; width: 100%; }
+    .referensi-table thead th { padding: 6px 4px; font-size: 9px; }
+    .referensi-table tbody td { padding: 6px 4px; }
+  }
+
+  @media (max-width: 600px) {
+    .garment-table-wrap { border: none; border-radius: 0; overflow: visible; }
+    .garment-table { display: none; }
+    .garment-cards { display: flex; flex-direction: column; gap: 10px; }
+    .garment-card {
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px; background: white; position: relative;
+    }
+    .garment-card select {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 8px 10px; font-size: 13px; font-family: inherit;
+      color: var(--ink); background: white; outline: none;
+    }
+    .garment-card select:focus { border-color: #EE5F28; }
+    .garment-card .card-dim {
+      font-size: 11px; color: var(--muted); margin-top: 4px; margin-bottom: 10px; min-height: 16px;
+    }
+    .garment-card .card-dim:not(:empty)::before { content: "📐 "; }
+    .garment-card .card-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;
+    }
+    .garment-card .card-field label {
+      display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
+    }
+    .garment-card .card-field input {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 7px 10px; font-size: 13px; font-family: inherit;
+      color: var(--ink); background: white; outline: none;
+    }
+    .garment-card .card-field input:focus { border-color: #EE5F28; }
+    .garment-card .card-bottom {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--border);
+    }
+    .garment-card .card-subtotal {
+      font-family: 'Plus Jakarta Sans','DM Sans','Helvetica Neue',Arial,sans-serif;
+      font-size: 13px; font-weight: 700; color: var(--ink);
+    }
+    .garment-card .card-subtotal span {
+      font-size: 11px; font-weight: 400; color: var(--muted); margin-left: 4px;
+    }
+    .garment-card .del-row-btn { font-size: 18px; }
+    .garment-add-card {
+      border: 1.5px dashed var(--border); border-radius: 8px;
+      padding: 12px; text-align: center; background: none;
+      font-size: 13px; font-family: 'Plus Jakarta Sans','DM Sans','Helvetica Neue',Arial,sans-serif;
+      font-weight: 600; color: var(--muted); cursor: pointer; width: 100%;
+      transition: all 0.15s;
+    }
+    .garment-add-card:hover { border-color: #EE5F28; color: #EE5F28; }
+  }
+  @media (min-width: 601px) {
+    .garment-cards { display: none; }
+    .garment-add-card { display: none; }
+  }
+
+  :root {
+    --red: #E8311A; --gold: #EE5F28; --dark: #0F0E0D;
+    --ink: #1A1917; --paper: #FAF7F2; --muted: #7A7570;
+    --border: #E2DDD8; --green: #1D7A4A;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-text-size-adjust:100%; }
+  html { font-size:16px; }
+  body { background:var(--paper); font-family:'DM Sans','Helvetica Neue',Arial,sans-serif; color:var(--ink); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  body, input, select, button, textarea { font-synthesis:none; }
+  .page { padding:0 0 60px; }
+  .inner { max-width:780px; margin:0 auto; }
+
+  .header { background:#017aff; color:white; padding:0; position:relative; overflow:hidden; text-align:center; }
+  .header .inner { padding:40px 24px 36px; }
+  .header::before { content:'中'; position:absolute; right:-20px; top:-30px; font-size:220px; color:rgba(255,255,255,0.06); font-family:serif; line-height:1; pointer-events:none; }
+  .header-tag { display:inline-block; background:#83c503; color:white; font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:4px 10px; border-radius:2px; margin-bottom:16px; }
+  .header p { margin-left:auto; margin-right:auto; color:rgba(255,255,255,0.75); font-size:14px; font-weight:300; max-width:420px; line-height:1.6; }
+  .header h1 { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:28px; font-weight:800; line-height:1.1; margin-bottom:10px; }
+  .header h1 span { color:#FFE54D; }
+
+  .formula-banner { background:#83c503; color:white; padding:20px 0; margin-top:0; }
+  .formula-banner .inner { padding-left:20px; padding-right:20px; }
+  .formula-banner p { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,0.8); margin-bottom:8px; }
+  .formula { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:13px; font-weight:500; }
+  .formula-item { background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.35); padding:5px 12px; border-radius:20px; white-space:nowrap; }
+  .formula-plus { color:rgba(255,255,255,0.7); font-size:16px; }
+
+  .section { padding:36px 40px; border-bottom:1px solid var(--border); }
+  .section-label { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+  .section-num { width:26px; height:26px; background:var(--dark); color:white; font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; border-radius:50%; flex-shrink:0; }
+  .section-title { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+
+  .rate-table { width:100%; border-collapse:collapse; font-size:14px; }
+  .rate-table thead tr { background:var(--ink); color:white; }
+  .rate-table thead th { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; padding:10px 14px; text-align:left; }
+  .rate-table tbody tr { border-bottom:1px solid var(--border); transition:background 0.15s; }
+  .rate-table tbody tr:hover { background:rgba(0,0,0,0.025); }
+  .rate-table tbody td { padding:12px 14px; vertical-align:top; line-height:1.5; }
+  .rate-table .hl { background:#FFF3EE; }
+  .rate-table .hl td:first-child { border-left:3px solid var(--gold); }
+  .tag { display:inline-block; font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; padding:2px 7px; border-radius:3px; }
+  .tag-pass { background:#E8F5EE; color:var(--green); }
+  .tag-tier { background:#FFF0E8; color:var(--red); }
+
+  .cbm-box { background:var(--ink); color:white; border-radius:8px; padding:24px; margin-top:16px; }
+  .cbm-formula { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:22px; font-weight:700; color:#EE5F28; margin:8px 0 4px; }
+  .cbm-sub { font-size:12px; color:rgba(255,255,255,0.5); }
+  .example-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+  .example-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:14px 16px; }
+  .ex-label { font-size:10px; color:rgba(255,255,255,0.45); letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+  .ex-item { font-size:12px; color:rgba(255,255,255,0.7); margin-bottom:2px; }
+  .ex-total { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:15px; font-weight:700; color:var(--gold); margin-top:8px; }
+
+  .adval-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .adval-card { border:1.5px solid var(--border); border-radius:8px; padding:16px; text-align:center; }
+  .adval-card.active { border-color:var(--gold); background:#FFF3EE; }
+  .adval-card .range { font-size:11px; color:var(--muted); margin-bottom:8px; line-height:1.4; }
+  .adval-card .rate-big { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:22px; font-weight:800; color:var(--ink); }
+  .adval-card.active .rate-big { color:var(--red); }
+  .adval-card .rate-label { font-size:11px; color:var(--muted); margin-top:2px; }
+
+  .packing-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .packing-card { border:1.5px solid var(--border); border-radius:8px; padding:14px 12px; text-align:center; }
+  .packing-card.featured { border-color:var(--gold); background:#FFF3EE; }
+  .pk-tier { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .pk-cbm { font-size:11px; color:var(--muted); margin-bottom:8px; line-height:1.4; }
+  .pk-price { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:16px; font-weight:800; color:var(--ink); word-break:break-word; }
+  .packing-card.featured .pk-price { color:var(--red); }
+  .pk-example { font-size:11px; color:var(--muted); margin-top:4px; line-height:1.4; }
+
+  .service-box { background:white; border:1.5px solid var(--border); border-radius:8px; overflow:hidden; }
+  .service-split { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border); }
+  .service-half { padding:20px 24px; }
+  .service-half:first-child { border-right:1px solid var(--border); }
+  .service-sub { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .service-num { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:28px; font-weight:800; color:var(--ink); word-break:break-word; }
+  .service-num.red { color:var(--red); }
+  .service-desc { font-size:13px; color:var(--muted); margin-top:4px; }
+  .service-foot { padding:12px 24px; background:#F9F7F4; font-size:13px; color:var(--muted); line-height:1.6; }
+
+  .rule-list { list-style:none; }
+  .rule-list li { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); font-size:14px; line-height:1.5; }
+  .rule-list li:last-child { border-bottom:none; }
+  .rule-icon { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; margin-top:1px; }
+  .rule-icon.warn { background:#FFF3CD; color:#856404; }
+  .rule-icon.ok { background:#D1F2E0; color:var(--green); }
+  .rule-icon.info { background:#E8EEFF; color:#3A4DB5; }
+  .rule-list strong { color:var(--ink); font-weight:600; }
+  .rule-list span { color:var(--muted); display:block; font-size:13px; margin-top:2px; }
+
+  .terms-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .term-item { background:white; border:1px solid var(--border); border-radius:6px; padding:14px 16px; font-size:13px; line-height:1.6; }
+  .term-item strong { display:block; font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+
+  .note { background:#FFF3EE; border-left:3px solid var(--gold); padding:12px 16px; font-size:13px; color:var(--ink); border-radius:0 4px 4px 0; margin-top:16px; line-height:1.6; }
+  .note-blue { background:#F0F7FF; border-left:3px solid #4A7ABF; padding:12px 16px; font-size:13px; color:#1A2A4A; border-radius:0 4px 4px 0; margin-top:16px; line-height:1.6; }
+
+  .calc-wrapper { background:white; border:1.5px solid var(--border); border-radius:10px; overflow:hidden; }
+  .calc-header { display:flex; align-items:center; gap:14px; padding:18px 20px; background:#017aff; color:white; }
+  .calc-icon { font-size:24px; }
+  .calc-title { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:15px; font-weight:700; }
+  .calc-sub { font-size:12px; color:rgba(255,255,255,0.5); margin-top:2px; }
+  .calc-body { padding:20px; }
+  .input-row { display:grid; gap:12px; margin-bottom:12px; }
+  .input-row.two { grid-template-columns:1fr 1fr; }
+  .input-row.three { grid-template-columns:1fr 1fr 1fr; }
+  .input-group label { display:block; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .input-group input, .input-group select { width:100%; border:1.5px solid var(--border); border-radius:6px; padding:10px 12px; font-family:'DM Sans','Helvetica Neue',Arial,sans-serif; font-size:14px; color:var(--ink); background:var(--paper); transition:border-color 0.2s; outline:none; }
+  .input-group input:focus, .input-group select:focus { border-color:var(--dark); background:white; }
+  .calc-empty { text-align:center; color:var(--muted); font-size:13px; padding:24px 0 8px; }
+  .calc-result { margin-top:16px; border-top:1px solid var(--border); padding-top:16px; }
+  .result-rows { display:flex; flex-direction:column; margin-bottom:16px; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .result-row { display:flex; justify-content:space-between; align-items:flex-start; padding:10px 14px; font-size:13px; border-bottom:1px solid var(--border); gap:12px; }
+  .result-row:last-child { border-bottom:none; }
+  .r-label { color:var(--muted); flex:1; }
+  .r-val { font-weight:600; color:var(--ink); font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:13px; white-space:nowrap; text-align:right; flex-shrink:0; }
+  .r-val.accent { color:var(--red); }
+  .result-row.hl { background:#FFF3EE; }
+  .result-total-box { background:#83c503; color:white; border-radius:8px; padding:16px 18px; margin-bottom:12px; }
+  .result-total-label { font-size:11px; color:rgba(255,255,255,0.6); letter-spacing:0.5px; margin-bottom:4px; }
+  .result-total-num { font-family:'Plus Jakarta Sans','DM Sans',sans-serif; font-size:26px; font-weight:800; color:#ee5f27; text-align:right; }
+  .result-pending { display:flex; gap:10px; background:#F0F7FF; border:1px solid #C8DEFF; border-radius:8px; padding:12px 14px; font-size:13px; color:#2A4A7A; line-height:1.6; }
+
+  .garment-table-wrap { overflow-x: auto; margin-top: 4px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .garment-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .garment-table thead tr { background: #017aff; color: white; }
+  .garment-table thead th { font-family: 'Plus Jakarta Sans','DM Sans',sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; padding: 10px 12px; text-align: left; }
+  .garment-table tbody tr { border-bottom: 1px solid var(--border); }
+  .garment-table tbody tr:last-child { border-bottom: none; }
+  .garment-table tbody td { padding: 8px 10px; vertical-align: middle; }
+  .garment-table tfoot td { padding: 8px 10px; text-align: center; }
+  .garment-table select, .garment-table input[type="text"], .garment-table input[type="number"] {
+    width: 100%; border: 1px solid var(--border); border-radius: 5px;
+    padding: 6px 8px; font-size: 13px; font-family: inherit;
+    background: white; color: var(--ink); outline: none;
+  }
+  .garment-table select:focus, .garment-table input:focus { border-color: #EE5F28; }
+  .garment-cbm-sub { font-family: 'Plus Jakarta Sans','DM Sans',sans-serif; font-weight: 600; font-size: 13px; color: var(--ink); }
+  .del-row-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; padding: 4px; border-radius: 4px; transition: color 0.15s; }
+  .del-row-btn:hover { color: var(--red); }
+  .add-row-btn { background: none; border: 1.5px dashed var(--border); border-radius: 6px; padding: 7px 16px; font-size: 13px; font-family: 'Plus Jakarta Sans','DM Sans',sans-serif; font-weight: 600; color: var(--muted); cursor: pointer; width: 100%; transition: all 0.15s; }
+  .add-row-btn:hover { border-color: #EE5F28; color: #EE5F28; }
+
+  .mode-tabs { display: flex; gap: 0; background: var(--border); border-radius: 10px; padding: 4px; margin: 28px auto 0; max-width: 320px; width: calc(100% - 80px); }
+
+  .order-link-bar { background:var(--dark); padding:16px 20px; text-align:center; }
+  .order-link-btn {
+    display:inline-block; background:#EE5F28; color:white; font-family:'Plus Jakarta Sans','DM Sans',sans-serif;
+    font-size:14px; font-weight:700; text-decoration:none; letter-spacing:0.2px;
+    padding:12px 24px; border-radius:8px; transition:background 0.15s;
+  }
+  .order-link-btn:hover { background:#D94F1A; }
+  .mode-tab { flex: 1; padding: 9px 16px; border-radius: 7px; border: none; background: transparent; font-family: 'Plus Jakarta Sans','DM Sans',sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted); transition: all 0.2s; letter-spacing: 0.2px; }
+  .mode-tab.active { background: white; color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+  .mode-content { display: none; }
+  .mode-content.active { display: block; }
+
+  .footer { background:#017aff; color:rgba(255,255,255,0.7); padding:24px 20px; font-size:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .footer strong { color:white; font-family:'Plus Jakarta Sans','DM Sans',sans-serif; }
+
+  .collapse-wrapper { margin: 20px 40px; border: 2px solid #EE5F28; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(238,95,40,0.15); }
+  .collapse-trigger { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; cursor: pointer; background: #ee5f27; transition: background 0.2s; user-select: none; }
+  .collapse-trigger:hover { background: #d94f1a; }
+  .ct-left { display: flex; align-items: center; gap: 16px; }
+  .ct-icon { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.25); color: white; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), background 0.2s; }
+  .collapse-trigger.open .ct-icon { transform: rotate(45deg); }
+  .ct-title { font-family: 'Plus Jakarta Sans','DM Sans',sans-serif; font-size: 17px; font-weight: 800; color: white; line-height: 1.2; }
+  .ct-sub { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 3px; }
+  .ct-arrow { font-size: 20px; color: white; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); flex-shrink: 0; }
+  .collapse-trigger.open .ct-arrow { transform: rotate(180deg); }
+  .detail-body { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1); border-top: 0px solid var(--gold); }
+  .detail-body.open { max-height: 6000px; border-top: 2px solid var(--gold); }
+
+  @media (max-width:600px) {
+    .collapse-wrapper { margin: 16px 20px; }
+    .collapse-trigger { padding: 16px; }
+    .page { padding:0 0 40px; }
+    .header .inner { padding:32px 20px 28px; }
+    .header h1 { font-size:22px; }
+    .section { padding:24px 16px; }
+    .packing-grid { grid-template-columns:1fr 1fr; gap:8px; }
+    .adval-grid { grid-template-columns:1fr; gap:8px; }
+    .service-split { grid-template-columns:1fr 1fr; }
+    .service-num { font-size:24px; }
+    .example-grid { grid-template-columns:1fr; }
+    .terms-grid { grid-template-columns:1fr; }
+    .input-row.three { grid-template-columns:1fr 1fr; }
+    .input-row.two { grid-template-columns:1fr 1fr; }
+    .formula-banner .inner { padding-left:16px; padding-right:16px; }
+    .footer { padding:20px 16px; }
+    .calc-body { padding:16px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="inner">
+    <div style="text-align:center;margin-bottom:20px;">
+      <img src="https://raw.githubusercontent.com/alfaankh/ImageAssets/1a67a9e04e136f32a168beef5c3b2df731c1e1fa/Anak%20Tengah%20Horizontal%20Title.png" alt="Anak Tengah" style="max-width:340px;width:80%;height:auto;display:block;margin:0 auto;">
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-top:12px;">Jastip China → Indonesia</div>
+    </div>
+    <div class="header-tag">Rate Card · Berlaku 2026</div>
+    <h1>Harga Transparan,<br><span>Nggak Ada yang Disembunyiin.</span></h1>
+    <p>Semua komponen biaya tertera jelas. Baca sekali, ngerti selamanya, nggak perlu tanya-tanya lagi.</p>
+    </div>
+  </div>
+
+  <div class="formula-banner">
+    <div class="inner">
+    <p>Total yang kamu bayar =</p>
+    <div class="formula">
+      <span class="formula-item">💴 Harga Taobao</span><span class="formula-plus">+</span>
+      <span class="formula-item">📦 Ongkir China lokal</span><span class="formula-plus">+</span>
+      <span class="formula-item">🚢 Sea Freight</span><span class="formula-plus">+</span>
+      <span class="formula-item">🤝 Service Fee</span><span class="formula-plus">+</span>
+      <span class="formula-item">📦 Packing</span><span class="formula-plus">+</span>
+      <span class="formula-item">🛵 JNE ke kamu</span>
+    </div>
+    </div>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-regular" onclick="switchMode('regular')">📦 Regular Item</button>
+    <button class="mode-tab" id="tab-garment" onclick="switchMode('garment')">👕 Garment</button>
+  </div>
+
+  <div class="inner">
+
+  <!-- REGULAR ITEM -->
+  <div class="mode-content active" id="content-regular">
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">1</div>
+      <div class="section-title">Kalkulator Estimasi Biaya</div>
+    </div>
+    <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:16px;">Isi harga dan ukuran barang, semua komponen biaya langsung dihitung otomatis. Kurs diambil dari data harian.</p>
+
+    <div class="calc-wrapper">
+      <div class="calc-header">
+        <span class="calc-icon">🧮</span>
+        <div>
+          <div class="calc-title">Estimasi Biaya Jastip</div>
+          <div class="calc-sub" id="kurs-label">Memuat kurs...</div>
+        </div>
+      </div>
+      <div class="calc-body">
+        <div class="input-row two">
+          <div class="input-group">
+            <label>Harga Barang (¥ RMB)</label>
+            <input type="text" id="inp-rmb" placeholder="cth: 1.500" oninput="syncCurrency('rmb')" inputmode="decimal">
+          </div>
+          <div class="input-group">
+            <label>Harga Barang (Rp)</label>
+            <input type="text" id="inp-price" placeholder="cth: 3.750.000" oninput="syncCurrency('idr')" inputmode="decimal">
+          </div>
+        </div>
+        <div class="input-row three">
+          <div class="input-group">
+            <label>Panjang (cm)</label>
+            <input type="number" id="inp-p" placeholder="20" oninput="calcEstimate()">
+          </div>
+          <div class="input-group">
+            <label>Lebar (cm)</label>
+            <input type="number" id="inp-l" placeholder="15" oninput="calcEstimate()">
+          </div>
+          <div class="input-group">
+            <label>Tinggi (cm)</label>
+            <input type="number" id="inp-t" placeholder="10" oninput="calcEstimate()">
+          </div>
+        </div>
+
+        <div class="calc-result" id="calc-result" style="display:none">
+          <div class="result-rows" id="result-rows"></div>
+          <div class="result-total-box">
+            <div class="result-total-label">Estimasi total (belum termasuk ongkir Taobao lokal &amp; JNE)</div>
+            <div class="result-total-num" id="result-total"></div>
+          </div>
+          <div class="result-pending"><span>⏳</span><div id="result-pending-text"></div></div>
+        </div>
+        <div class="calc-empty" id="calc-empty">Isi harga dan ukuran barang di atas untuk lihat estimasi 👆</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="collapse-wrapper">
+    <div class="collapse-trigger" id="detail-toggle" onclick="toggleDetail()">
+      <div class="ct-left">
+        <div class="ct-icon" id="ct-icon">＋</div>
+        <div>
+          <div class="ct-title">Mau tau detail cara penghitungannya?</div>
+          <div class="ct-sub" id="ct-sub">Cara hitung CBM, service fee, dan packing</div>
+        </div>
+      </div>
+      <div class="ct-arrow" id="ct-arrow">▾</div>
+    </div>
+
+    <div id="detail-sections" class="detail-body">
+
+    <div class="section">
+    <div class="section-label">
+      <div class="section-num">·</div>
+      <div class="section-title">Cara Hitung Volume (CBM)</div>
+    </div>
+    <div class="cbm-box" style="margin-top:0">
+      <div class="cbm-sub">Rumus</div>
+      <div class="cbm-formula">P × L × T (cm) ÷ 1.000.000 = CBM</div>
+      <div class="cbm-sub" style="margin-top:6px" id="cbm-rate-note">Tarif sea freight: <strong style="color:white">memuat...</strong> &nbsp;·&nbsp; Dibagi proporsional ke semua yang titip di batch yang sama 🤝</div>
+      <div class="example-grid" id="cbm-examples"></div>
+    </div>
+    <div class="note">⚠️ <strong>Minimum batch 0,1 CBM.</strong> Jika total volume batch di bawah minimum, biaya dibagi proporsional ke semua customer, bukan ditanggung satu orang.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">·</div>
+      <div class="section-title">Service Fee / Jasa Titip</div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">Biaya jasa untuk proses pembelian, koordinasi seller, pengecekan barang saat kami terima, dan koordinasi pengiriman end-to-end.</p>
+    <div class="service-box">
+      <div class="service-split">
+        <div class="service-half">
+          <div class="service-sub">Rate</div>
+          <div class="service-num" id="service-rate-display">10%</div>
+          <div class="service-desc">dari harga barang (Taobao)</div>
+        </div>
+        <div class="service-half">
+          <div class="service-sub">Minimum</div>
+          <div class="service-num red" id="service-min-display">Rp 50rb</div>
+          <div class="service-desc">per item / per transaksi</div>
+        </div>
+      </div>
+      <div class="service-foot" id="service-foot-text"></div>
+    </div>
+    <div class="note" id="service-example-note"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">·</div>
+      <div class="section-title">Packing Fee</div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">Dihitung otomatis dari ukuran yang sudah kamu input, tidak perlu data tambahan.</p>
+    <div class="packing-grid" id="packing-grid"></div>
+    <div class="note">+ <strong>Fragile handling Rp 15.000</strong> (opsional): bubble wrap ekstra + foto detail kondisi barang. Disarankan untuk elektronik dan hobby parts sensitif.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">·</div>
+      <div class="section-title">Ringkasan Semua Komponen Biaya</div>
+    </div>
+    <table class="rate-table" id="summary-table">
+      <thead><tr><th>Komponen</th><th>Cara Hitung</th><th>Keterangan</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">2</div>
+      <div class="section-title">Ketentuan Batch &amp; Timeline</div>
+    </div>
+    <ul class="rule-list">
+      <li><div class="rule-icon ok">✓</div><div><strong>Pengiriman dikonsolidasi setiap 2 minggu</strong><span>Barang kami kumpulkan dan kirim bareng dalam satu batch. Semakin ramai, semakin ringan biaya masing-masing.</span></div></li>
+      <li><div class="rule-icon ok">✓</div><div><strong>Foto setiap barang saat kami terima</strong><span>Semua barang difoto kondisi luar dan dalam sebelum dikemas. Foto dikirim ke customer via WA sebagai bukti kondisi.</span></div></li>
+      <li><div class="rule-icon info">i</div><div><strong>Estimasi di awal, final setelah barang diukur</strong><span>Estimasi dikirim saat order masuk. Tagihan final dikonfirmasi setelah barang kami terima dan diukur. Selisih maks ±10%.</span></div></li>
+      <li><div class="rule-icon info">i</div><div><strong>Estimasi waktu total: 3–5 minggu</strong><span>Taobao → kami terima: 3–7 hari &nbsp;·&nbsp; Laut ke Jakarta: 14–21 hari &nbsp;·&nbsp; JNE ke kamu: 1–3 hari</span></div></li>
+      <li><div class="rule-icon warn">!</div><div><strong>Minimum batch 0,1 CBM: dibagi bersama</strong><span>Biaya minimum dibagi proporsional ke semua customer di batch. Bukan ditanggung satu orang.</span></div></li>
+      <li><div class="rule-icon warn">!</div><div><strong>Barang di atas Rp 5.000.000: konfirmasi dulu</strong><span>Hubungi kami sebelum order. Ada proses verifikasi khusus untuk barang bernilai sangat tinggi.</span></div></li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">3</div>
+      <div class="section-title">Syarat &amp; Ketentuan</div>
+    </div>
+    <div class="terms-grid">
+      <div class="term-item"><strong>Pembayaran</strong>DP harga barang + ongkir China lokal di muka. Pelunasan sea freight, service fee, dan packing setelah barang kami terima dan diukur.</div>
+      <div class="term-item"><strong>Deklarasi Barang</strong>Customer wajib declare jenis barang dengan benar. Jika barang masuk kategori berbeda, selisih biaya ditagih sebelum barang dikirim.</div>
+      <div class="term-item"><strong>Barang Terlarang</strong>Tidak menerima barang berbahaya, liquid, baterai Li-ion lepas, produk yang dilarang bea cukai Indonesia, atau branded palsu.</div>
+      <div class="term-item"><strong>Bea Cukai</strong>Bea masuk (jika ada) ditanggung customer. Kami info jika ada potensi kena bea sebelum pengiriman dilakukan.</div>
+      <div class="term-item"><strong>Perubahan Tarif</strong>Rate card berlaku sampai ada pemberitahuan. Perubahan tarif diinfo minimal 1 batch sebelum berlaku.</div>
+    </div>
+  </div>
+
+  </div><!-- end content-regular -->
+
+  <!-- GARMENT -->
+  <div class="mode-content" id="content-garment">
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">1</div>
+      <div class="section-title">Kalkulator Estimasi Biaya Garment</div>
+    </div>
+
+    <div class="note" style="margin-bottom:12px;">⚠️ <strong>Angka di sini estimasi ya, bukan final.</strong> Dimensi per kategori pakai ukuran rata-rata terlipat rapi. CBM final tetap diukur ulang setelah barang kami terima.</div>
+    <div style="display:inline-flex;align-items:center;gap:8px;background:#F0F7FF;border:1px solid #C8DEFF;border-radius:6px;padding:6px 12px;font-size:12px;color:#2A4A7A;margin-bottom:16px;">
+      <span>💱</span>
+      <span id="kurs-label-garment">Memuat kurs...</span>
+    </div>
+
+    <div class="garment-table-wrap">
+      <table class="garment-table" id="garment-items">
+        <thead>
+          <tr>
+            <th>Kategori</th>
+            <th class="col-nama">Nama Barang</th>
+            <th style="width:80px;">Harga (¥ RMB)</th>
+            <th style="width:70px;">Jml</th>
+            <th class="col-ukuran" style="width:110px;">Ukuran lipat (cm)</th>
+            <th style="width:90px;">Subtotal</th>
+            <th style="width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody id="garment-rows"></tbody>
+        <tfoot><tr><td colspan="7"><button class="add-row-btn" onclick="addGarmentRow()">+ Tambah barang</button></td></tr></tfoot>
+      </table>
+      <div class="garment-cards" id="garment-cards"></div>
+      <button class="garment-add-card" onclick="addGarmentRow()">+ Tambah barang</button>
+    </div>
+
+    <div class="calc-result" id="garment-result" style="display:none;margin-top:16px;">
+      <div class="result-rows" id="g-result-rows"></div>
+      <div class="result-total-box">
+        <div class="result-total-label">Estimasi total garment (belum termasuk ongkir Taobao lokal &amp; JNE)</div>
+        <div class="result-total-num" id="g-result-total"></div>
+      </div>
+    </div>
+    <div class="calc-empty" id="garment-pending" style="display:flex;">Pilih kategori dan isi harga barang di atas untuk lihat estimasi 👆</div>
+  </div>
+
+  <div class="collapse-wrapper">
+    <div class="collapse-trigger" id="g-detail-toggle" onclick="toggleGarmentDetail()">
+      <div class="ct-left">
+        <div class="ct-icon">＋</div>
+        <div>
+          <div class="ct-title">Mau tau detail cara penghitungannya?</div>
+          <div class="ct-sub" id="g-ct-sub">Dimensi per kategori, sea freight, service fee, dan cara kami hitung</div>
+        </div>
+      </div>
+      <div class="ct-arrow">▾</div>
+    </div>
+    <div id="g-detail-sections" class="detail-body">
+      <div class="section">
+        <div class="section-label"><div class="section-num">·</div><div class="section-title">Referensi Dimensi per Kategori</div></div>
+        <div class="garment-table-wrap">
+          <table class="garment-table referensi-table">
+            <thead><tr><th>Kategori</th><th style="text-align:center;">P (cm)</th><th style="text-align:center;">L (cm)</th><th style="text-align:center;">T (cm)</th><th class="col-cbm" style="text-align:center;">CBM/pcs</th></tr></thead>
+            <tbody id="referensi-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">2</div>
+      <div class="section-title">Ketentuan Batch &amp; Timeline Garment</div>
+    </div>
+    <ul class="rule-list">
+      <li><div class="rule-icon ok">✓</div><div><strong>Pengiriman dikonsolidasi setiap 2 minggu</strong><span>Barang kami kumpulkan di titik konsolidasi, lalu dikirim bareng dalam satu batch.</span></div></li>
+      <li><div class="rule-icon ok">✓</div><div><strong>Foto setiap barang saat kami terima</strong><span>Semua garment difoto kondisi luar sebelum dikemas.</span></div></li>
+      <li><div class="rule-icon info">i</div><div><strong>CBM final diukur saat kami terima</strong><span>Estimasi kalkulator berdasarkan dimensi rata-rata per kategori. Selisih maks ±15%.</span></div></li>
+      <li><div class="rule-icon info">i</div><div><strong>Estimasi waktu total: 6–10 minggu</strong><span>Taobao → kami terima: 3–7 hari &nbsp;·&nbsp; Laut ke Jakarta: 30–45 hari &nbsp;·&nbsp; JNE ke kamu: 1–3 hari</span></div></li>
+      <li><div class="rule-icon warn">!</div><div><strong>Potensi red line bea cukai</strong><span>Kategori garment lebih rentan pemeriksaan bea cukai. Jika terjadi, estimasi bisa molor hingga 60 hari.</span></div></li>
+      <li><div class="rule-icon warn">!</div><div><strong>Minimum batch 0,1 CBM: dibagi bersama</strong><span>Dibagi proporsional ke semua customer di batch.</span></div></li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">3</div>
+      <div class="section-title">Syarat &amp; Ketentuan Garment</div>
+    </div>
+    <div class="terms-grid">
+      <div class="term-item"><strong>Sea Freight</strong>Dihitung dari CBM aktual setelah barang kami terima dan diukur.</div>
+      <div class="term-item"><strong>Service Fee</strong>10% dari harga barang, dengan minimum flat untuk barang murah. Dibayar bersama pelunasan.</div>
+      <div class="term-item"><strong>Pembayaran</strong>DP harga barang + ongkir lokal China di muka. Pelunasan sea freight dan service fee setelah barang kami terima.</div>
+      <div class="term-item"><strong>Keterlambatan</strong>Tidak ada kompensasi keterlambatan untuk kategori garment, termasuk jika terkena red line.</div>
+      <div class="term-item"><strong>Barang Diterima</strong>Pakaian jadi, aksesori tekstil, boneka, dan semi garment. Tidak menerima branded palsu.</div>
+    </div>
+  </div>
+
+  </div><!-- end content-garment -->
+
+  </div><!-- end content inner -->
+
+  <div class="order-link-bar">
+    <a href="order.html" class="order-link-btn">🛒 Sudah Yakin? Buat Pesanan Sekarang →</a>
+  </div>
+
+  <div class="footer" style="flex-direction:column;text-align:center;gap:12px;padding:32px 40px;">
+    <div style="font-family:'Plus Jakarta Sans','DM Sans',sans-serif;font-size:22px;font-weight:800;color:white;">Ada barang incaran? 👀</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.5);max-width:320px;line-height:1.6;">Hitung dulu di atas, kalau udah yakin, WA langsung. Kami yang urus dari China sampai depan pintu.</div>
+    <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:12px;font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:1px;text-transform:uppercase;">
+      <strong style="color:rgba(255,255,255,0.5)">Anak Tengah</strong> &nbsp;·&nbsp; Rate Card 2026
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // SUPABASE CONNECTION
+  // ============================================================
+  const SUPABASE_URL = 'https://somdevhztgbsjkgqwman.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_WCgYHl38IazRNDVAW-cqkw_5HOeUec7';
+  const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+  // Config loaded live from pricing_config + garment_categories.
+  // Falls back to the last-known-good values (matching original calculator)
+  // if the fetch fails, so the page never breaks even if offline.
+  let CFG = {
+    rate_floor: 2600,
+    rate_spread: 0.03,
+    sea_rate_dimension: 8500000,
+    service_fee_rate_dimension: 0.10,
+    service_fee_min_dimension: 50000,
+    packing_fee_small: 15000,
+    packing_fee_medium: 30000,
+    packing_fee_large: 50000,
+    packing_fee_xl: 85000,
+    packing_tier_small_max_cbm: 0.010,
+    packing_tier_medium_max_cbm: 0.050,
+    packing_tier_large_max_cbm: 0.150,
+    sea_rate_garment: 10500000,
+    garment_packing_buffer: 0.10,
+    service_fee_rate_garment: 0.10,
+    service_fee_min_garment: 30000,
+    garment_min_service_threshold: 300000,
+  };
+  let GARMENT_CATS = [];
+
+  async function loadConfig() {
+    if (!sb) { renderStaticExplainers(); return; }
+    try {
+      const { data: pricing, error: e1 } = await sb.from('pricing_config').select('key, value');
+      if (!e1 && pricing) {
+        pricing.forEach(row => { CFG[row.key] = parseFloat(row.value); });
+      }
+      const { data: garments, error: e2 } = await sb.from('garment_categories')
+        .select('label, panjang_cm, lebar_cm, tebal_cm')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (!e2 && garments) {
+        GARMENT_CATS = garments.map(g => ({ label: g.label, p: g.panjang_cm, l: g.lebar_cm, t: g.tebal_cm }));
+      }
+    } catch(e) {
+      console.warn('Falling back to default pricing config', e);
+    }
+    if (GARMENT_CATS.length === 0) {
+      // absolute fallback if Supabase fetch fails entirely
+      GARMENT_CATS = [
+        { label: "Kaos oblong / tee", p:30, l:25, t:2 },
+        { label: "Kaos kaki (per pasang)", p:20, l:10, t:2 },
+      ];
+    }
+    renderStaticExplainers();
+    buildGarmentReferenceTable();
+    if (document.getElementById('garment-rows').children.length === 0) addGarmentRow();
+  }
+
+  function renderStaticExplainers() {
+    // CBM box rate note + examples
+    document.getElementById('cbm-rate-note').innerHTML =
+      `Tarif sea freight: <strong style="color:white">${fmt(CFG.sea_rate_dimension)} / CBM</strong> &nbsp;·&nbsp; Dibagi proporsional ke semua yang titip di batch yang sama 🤝`;
+    const ex1cbm = (20*15*10)/1e6, ex2cbm = (35*25*15)/1e6;
+    document.getElementById('cbm-examples').innerHTML = `
+      <div class="example-card">
+        <div class="ex-label">Contoh: Hobby Parts</div>
+        <div class="ex-item">📐 20 × 15 × 10 cm = ${ex1cbm.toFixed(3)} CBM</div>
+        <div class="ex-total">Sea freight: ${fmt(ex1cbm * CFG.sea_rate_dimension)}</div>
+      </div>
+      <div class="example-card">
+        <div class="ex-label">Contoh: Sepatu</div>
+        <div class="ex-item">📐 35 × 25 × 15 cm = ${ex2cbm.toFixed(3)} CBM</div>
+        <div class="ex-total">Sea freight: ${fmt(ex2cbm * CFG.sea_rate_dimension)}</div>
+      </div>`;
+
+    // Service fee box
+    document.getElementById('service-rate-display').textContent = (CFG.service_fee_rate_dimension * 100) + '%';
+    document.getElementById('service-min-display').textContent = 'Rp ' + Math.round(CFG.service_fee_min_dimension/1000) + 'rb';
+    document.getElementById('service-foot-text').innerHTML =
+      `Barang <strong style="color:var(--ink)">di bawah ${fmt(CFG.service_fee_min_dimension / CFG.service_fee_rate_dimension)}</strong> → kena flat ${fmt(CFG.service_fee_min_dimension)} &nbsp;·&nbsp;
+       Barang <strong style="color:var(--ink)">di atas ${fmt(CFG.service_fee_min_dimension / CFG.service_fee_rate_dimension)}</strong> → kena ${(CFG.service_fee_rate_dimension*100)}% normal`;
+    document.getElementById('service-example-note').innerHTML =
+      `Contoh: Barang Rp 300.000 → service fee <strong>${fmt(CFG.service_fee_min_dimension)}</strong> (minimum). &nbsp; Barang Rp 800.000 → service fee <strong>${fmt(800000 * CFG.service_fee_rate_dimension)}</strong> (${CFG.service_fee_rate_dimension*100}%).`;
+
+    // Packing grid
+    document.getElementById('packing-grid').innerHTML = `
+      <div class="packing-card">
+        <div class="pk-tier">Small</div>
+        <div class="pk-cbm">&lt; ${CFG.packing_tier_small_max_cbm.toFixed(3)} CBM</div>
+        <div class="pk-price">Rp ${Math.round(CFG.packing_fee_small/1000)}rb</div>
+        <div class="pk-example">Aksesoris, charger, hobby parts kecil</div>
+      </div>
+      <div class="packing-card featured">
+        <div class="pk-tier" style="color:var(--ink)">Medium</div>
+        <div class="pk-cbm">${CFG.packing_tier_small_max_cbm.toFixed(3)} – ${CFG.packing_tier_medium_max_cbm.toFixed(3)} CBM</div>
+        <div class="pk-price">Rp ${Math.round(CFG.packing_fee_medium/1000)}rb</div>
+        <div class="pk-example">Sepatu, tas kecil, action figure</div>
+      </div>
+      <div class="packing-card">
+        <div class="pk-tier">Large</div>
+        <div class="pk-cbm">${CFG.packing_tier_medium_max_cbm.toFixed(3)} – ${CFG.packing_tier_large_max_cbm.toFixed(3)} CBM</div>
+        <div class="pk-price">Rp ${Math.round(CFG.packing_fee_large/1000)}rb</div>
+        <div class="pk-example">Tas ransel, helm, box besar</div>
+      </div>
+      <div class="packing-card">
+        <div class="pk-tier">XL</div>
+        <div class="pk-cbm">&gt; ${CFG.packing_tier_large_max_cbm.toFixed(3)} CBM</div>
+        <div class="pk-price">Rp ${Math.round(CFG.packing_fee_xl/1000)}rb</div>
+        <div class="pk-example">Koper, barang oversized</div>
+      </div>`;
+
+    // Summary table
+    document.querySelector('#summary-table tbody').innerHTML = `
+      <tr><td><strong>Harga Taobao</strong></td><td>Sesuai listing</td><td><span class="tag tag-pass">Pass through</span></td></tr>
+      <tr><td><strong>Ongkir Taobao lokal</strong></td><td>Sesuai struk seller</td><td><span class="tag tag-pass">Pass through</span>&nbsp; Banyak seller 包邮 (gratis)</td></tr>
+      <tr class="hl"><td><strong>Sea Freight</strong></td><td>CBM × ${fmt(CFG.sea_rate_dimension)}</td><td>Min. 0,1 CBM/batch, dibagi proporsional</td></tr>
+      <tr class="hl"><td><strong>Service Fee</strong></td><td>${(CFG.service_fee_rate_dimension*100)}% harga, min. ${fmt(CFG.service_fee_min_dimension)}</td><td>Jasa beli, cek, koordinasi pengiriman</td></tr>
+      <tr class="hl"><td><strong>Packing Fee</strong></td><td>Rp ${Math.round(CFG.packing_fee_small/1000)}rb / ${Math.round(CFG.packing_fee_medium/1000)}rb / ${Math.round(CFG.packing_fee_large/1000)}rb / ${Math.round(CFG.packing_fee_xl/1000)}rb</td><td><span class="tag tag-tier">Tier CBM</span></td></tr>
+      <tr><td><strong>JNE ke kamu</strong></td><td>Sesuai tarif JNE</td><td><span class="tag tag-pass">Pass through</span>&nbsp; Berdasarkan kota tujuan</td></tr>`;
+  }
+
+  function buildGarmentReferenceTable() {
+    document.getElementById('referensi-rows').innerHTML = GARMENT_CATS.map(c => {
+      const cbm = (c.p * c.l * c.t / 1e6).toFixed(4);
+      return `<tr><td>${c.label}</td><td style="text-align:center;">${c.p}</td><td style="text-align:center;">${c.l}</td><td style="text-align:center;">${c.t}</td><td class="col-cbm" style="text-align:center;">${cbm}</td></tr>`;
+    }).join('');
+  }
+
+  // ============================================================
+  // EXCHANGE RATE
+  // ============================================================
+  const RATE_SPREAD_DEFAULT = 0.03;
+  let CNY_TO_IDR = 2678;
+
+  function applyRate(liveRate) {
+    const base = Math.max(liveRate, CFG.rate_floor);
+    CNY_TO_IDR = Math.round(base * (1 + CFG.rate_spread));
+  }
+
+  function updateKursLabels(status) {
+    const r = CNY_TO_IDR.toLocaleString('id-ID');
+    let tag = '';
+    if (status === 'live')    tag = `<span style="color:#6EE7A0;font-size:11px">● Live</span>`;
+    if (status === 'offline') tag = `<span style="color:rgba(255,255,255,0.4);font-size:11px">(offline)</span>`;
+    const html = `Kurs: <strong>1 CNY = Rp ${r}</strong> ${tag}`;
+    const el1 = document.getElementById('kurs-label');
+    const el2 = document.getElementById('kurs-label-garment');
+    if (el1) el1.innerHTML = html;
+    if (el2) el2.innerHTML = html;
+  }
+
+  async function fetchKurs() {
+    try {
+      const res  = await fetch('https://api.frankfurter.app/latest?from=CNY&to=IDR');
+      const data = await res.json();
+      if (data?.rates?.IDR) {
+        applyRate(data.rates.IDR);
+        updateKursLabels('live');
+        calcEstimate();
+        calcGarment();
+        return;
+      }
+    } catch(e) {}
+    applyRate(CFG.rate_floor);
+    updateKursLabels('offline');
+  }
+
+  function fmt(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
+
+  function getPackingFee(cbm) {
+    if (cbm < CFG.packing_tier_small_max_cbm) return { fee:CFG.packing_fee_small, tier:'Small' };
+    if (cbm < CFG.packing_tier_medium_max_cbm) return { fee:CFG.packing_fee_medium, tier:'Medium' };
+    if (cbm < CFG.packing_tier_large_max_cbm) return { fee:CFG.packing_fee_large, tier:'Large' };
+    return { fee:CFG.packing_fee_xl, tier:'XL' };
+  }
+
+  function getServiceFee(price) { return Math.max(price * CFG.service_fee_rate_dimension, CFG.service_fee_min_dimension); }
+
+  function parseFormatted(str) {
+    return parseFloat(String(str).replace(/\./g, '').replace(',', '.')) || 0;
+  }
+
+  function formatThousands(num, decimals = 0) {
+    if (!num && num !== 0) return '';
+    return decimals > 0
+      ? num.toLocaleString('id-ID', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+      : Math.round(num).toLocaleString('id-ID');
+  }
+
+  function switchMode(mode) {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + mode).classList.add('active');
+    document.getElementById('content-' + mode).classList.add('active');
+  }
+
+  let syncLock = false;
+  function syncCurrency(src) {
+    if (syncLock) return;
+    syncLock = true;
+    const rmbEl = document.getElementById('inp-rmb');
+    const idrEl = document.getElementById('inp-price');
+    if (src === 'rmb') {
+      const raw = parseFormatted(rmbEl.value);
+      idrEl.value = raw > 0 ? formatThousands(raw * CNY_TO_IDR) : '';
+    } else {
+      const raw = parseFormatted(idrEl.value);
+      rmbEl.value = raw > 0 ? formatThousands(raw / CNY_TO_IDR, 1) : '';
+    }
+    syncLock = false;
+    calcEstimate();
+  }
+
+  function calcEstimate() {
+    const price = parseFormatted(document.getElementById('inp-price').value) || 0;
+    const p     = parseFloat(document.getElementById('inp-p').value) || 0;
+    const l     = parseFloat(document.getElementById('inp-l').value) || 0;
+    const t     = parseFloat(document.getElementById('inp-t').value) || 0;
+
+    const resultEl = document.getElementById('calc-result');
+    const emptyEl  = document.getElementById('calc-empty');
+
+    if (!price || !p || !l || !t) {
+      resultEl.style.display = 'none';
+      emptyEl.style.display  = 'block';
+      return;
+    }
+
+    const cbm        = (p * l * t) / 1_000_000;
+    const seaFee      = cbm * CFG.sea_rate_dimension;
+    const serviceFee = getServiceFee(price);
+    const packing    = getPackingFee(cbm);
+    const rmb        = formatThousands(price / CNY_TO_IDR, 1);
+    const total      = price + seaFee + serviceFee + packing.fee;
+    const isMinService = price < (CFG.service_fee_min_dimension / CFG.service_fee_rate_dimension);
+
+    const rows = [
+      { label:`💴 Harga barang ¥${rmb} RMB`, val:fmt(price), hl:false },
+      { label:`📐 Volume: ${p}×${l}×${t} cm = ${cbm.toFixed(4)} CBM`, val:'', section:true },
+      { label:`🚢 Sea freight`, val:fmt(seaFee), hl:true, note:`${cbm.toFixed(4)} CBM × ${fmt(CFG.sea_rate_dimension)}` },
+      { label:`🤝 Service fee (${isMinService ? 'minimum' : (CFG.service_fee_rate_dimension*100)+'%'})`, val:fmt(serviceFee), hl:true },
+      { label:`📦 Packing fee (${packing.tier})`, val:fmt(packing.fee), hl:false },
+    ];
+
+    const rowsHTML = rows.map(r => {
+      if (r.section) return `<div class="result-row" style="background:#F5F3EF;font-size:12px;color:var(--muted)"><span>${r.label}</span></div>`;
+      const vc = r.accent ? 'r-val accent' : 'r-val';
+      const note = r.note ? `<span style="font-size:11px;color:var(--muted);margin-left:6px;font-weight:400">(${r.note})</span>` : '';
+      return `<div class="result-row ${r.hl?'hl':''}"><span class="r-label">${r.label}</span><span class="${vc}">${r.val}${note}</span></div>`;
+    }).join('');
+
+    document.getElementById('result-rows').innerHTML = rowsHTML;
+    document.getElementById('result-total').textContent = fmt(total);
+    document.getElementById('result-pending-text').innerHTML =
+      `<strong>Belum termasuk:</strong> ongkir Taobao lokal (cek apakah 包邮/gratis) dan ongkir JNE dari Jakarta ke kamu. Dikonfirmasi setelah barang kami terima. <strong>Tidak ada biaya lain di luar yang tertera.</strong>`;
+
+    resultEl.style.display = 'block';
+    emptyEl.style.display  = 'none';
+  }
+
+  // ============================================================
+  // GARMENT CALCULATOR
+  // ============================================================
+  let garmentRowCount = 0;
+
+  function catOptions(selectedIdx) {
+    const empty = `<option value="" ${selectedIdx === -1 ? 'selected' : ''} disabled>— Pilih kategori —</option>`;
+    return empty + GARMENT_CATS.map((c, i) =>
+      `<option value="${i}" ${i === selectedIdx ? 'selected' : ''}>${c.label}</option>`
+    ).join('');
+  }
+
+  function addGarmentRow(catIdx = -1) {
+    garmentRowCount++;
+    const id = garmentRowCount;
+    const c = catIdx === -1 ? {} : GARMENT_CATS[catIdx];
+    const dimStr = catIdx === -1 ? '' : `${c.p}×${c.l}×${c.t}`;
+
+    const tbody = document.getElementById('garment-rows');
+    const tr = document.createElement('tr');
+    tr.id = 'grow-' + id;
+    tr.innerHTML = `
+      <td><select onchange="onCatChange(${id}, this.value)">${catOptions(catIdx)}</select></td>
+      <td class="col-nama"><input type="text" id="g-nama-${id}" placeholder="cth: Kaos polos hitam" oninput="calcGarment()"></td>
+      <td><input type="text" id="g-price-${id}" placeholder="¥ 0" oninput="calcGarment()" inputmode="decimal" style="text-align:right;width:100%;"></td>
+      <td><input type="number" id="g-qty-${id}" value="1" min="1" oninput="calcGarment()" style="text-align:center;"></td>
+      <td class="col-ukuran" style="text-align:center;color:var(--muted);font-size:12px;" id="g-cbmpc-${id}">${dimStr}</td>
+      <td style="text-align:right;" id="g-sub-${id}"><span class="garment-cbm-sub"></span></td>
+      <td><button class="del-row-btn" onclick="delGarmentRow(${id})" title="Hapus">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+
+    const cards = document.getElementById('garment-cards');
+    const card = document.createElement('div');
+    card.className = 'garment-card';
+    card.id = 'gcard-' + id;
+    card.innerHTML = `
+      <select onchange="onCatChange(${id}, this.value)">${catOptions(catIdx)}</select>
+      <div class="card-dim" id="gcard-dim-${id}">${dimStr ? 'Ukuran lipat: ' + dimStr + ' cm' : 'Pilih kategori untuk lihat ukuran'}</div>
+      <div class="card-row">
+        <div class="card-field"><label>Nama Barang</label><input type="text" placeholder="cth: Kaos hitam" oninput="calcGarment()"></div>
+        <div class="card-field"><label>Harga (¥ RMB)</label><input type="text" id="g-price-c${id}" placeholder="¥ 0" oninput="syncCardPrice(${id})" inputmode="decimal"></div>
+      </div>
+      <div class="card-row">
+        <div class="card-field"><label>Jumlah</label><input type="number" id="g-qty-c${id}" value="1" min="1" oninput="syncCardQty(${id})"></div>
+        <div class="card-field" style="display:flex;align-items:flex-end;"><div id="gcard-sub-${id}" style="font-family:'Plus Jakarta Sans','DM Sans',sans-serif;font-size:13px;font-weight:700;color:var(--ink);padding-bottom:8px;"></div></div>
+      </div>
+      <div class="card-bottom"><div></div><button class="del-row-btn" onclick="delGarmentRow(${id})" title="Hapus">✕</button></div>
+    `;
+    cards.appendChild(card);
+    calcGarment();
+  }
+
+  function syncCardPrice(id) {
+    const cardEl = document.getElementById('g-price-c' + id);
+    const tableEl = document.getElementById('g-price-' + id);
+    if (cardEl && tableEl) tableEl.value = cardEl.value;
+    calcGarment();
+  }
+  function syncCardQty(id) {
+    const cardEl = document.getElementById('g-qty-c' + id);
+    const tableEl = document.getElementById('g-qty-' + id);
+    if (cardEl && tableEl) tableEl.value = cardEl.value;
+    calcGarment();
+  }
+  function onCatChange(id, catIdx) {
+    if (!catIdx && catIdx !== 0) { calcGarment(); return; }
+    const c = GARMENT_CATS[parseInt(catIdx)];
+    const dimStr = `${c.p}×${c.l}×${c.t}`;
+    const tableEl = document.getElementById('g-cbmpc-' + id);
+    if (tableEl) tableEl.textContent = dimStr;
+    const cardDim = document.getElementById('gcard-dim-' + id);
+    if (cardDim) cardDim.textContent = 'Ukuran lipat: ' + dimStr + ' cm';
+    calcGarment();
+  }
+  function delGarmentRow(id) {
+    const row = document.getElementById('grow-' + id);
+    if (row) row.remove();
+    const card = document.getElementById('gcard-' + id);
+    if (card) card.remove();
+    calcGarment();
+  }
+  function parseIDR(str) { return parseFloat((str || '0').replace(/[^\d]/g, '')) || 0; }
+
+  function calcGarment() {
+    const isMobile = window.innerWidth <= 600;
+    let totalCBM = 0, totalHarga = 0, itemCount = 0;
+
+    if (isMobile) {
+      document.querySelectorAll('#garment-cards .garment-card').forEach(card => {
+        const m = card.id.match(/gcard-(\d+)/);
+        if (!m) return;
+        const id = m[1];
+        const sel = card.querySelector('select');
+        const priceEl = document.getElementById('g-price-c' + id);
+        const qtyEl = document.getElementById('g-qty-c' + id);
+        if (!sel || !sel.value || sel.value === '') return;
+        const cat = GARMENT_CATS[parseInt(sel.value)];
+        const cbmPcs = cat.p * cat.l * cat.t / 1e6;
+        const qty = parseInt(qtyEl ? qtyEl.value : 1) || 1;
+        const hargaRmb = parseIDR(priceEl ? priceEl.value : '0');
+        const hargaItem = hargaRmb * CNY_TO_IDR * qty;
+        const sub = cbmPcs * qty;
+        totalCBM += sub; totalHarga += hargaItem; itemCount++;
+        const cardSub = document.getElementById('gcard-sub-' + id);
+        if (cardSub) cardSub.textContent = sub.toFixed(4) + ' CBM';
+      });
+    } else {
+      document.querySelectorAll('#garment-rows tr').forEach(tr => {
+        const m = tr.id.match(/grow-(\d+)/);
+        if (!m) return;
+        const id = m[1];
+        const sel = tr.querySelector('select');
+        const qtyEl = document.getElementById('g-qty-' + id);
+        const priceEl = document.getElementById('g-price-' + id);
+        if (!sel || !sel.value || sel.value === '') return;
+        const cat = GARMENT_CATS[parseInt(sel.value)];
+        const cbmPcs = cat.p * cat.l * cat.t / 1e6;
+        const qty = parseInt(qtyEl ? qtyEl.value : 1) || 1;
+        const hargaRmb = parseIDR(priceEl ? priceEl.value : '0');
+        const hargaItem = hargaRmb * CNY_TO_IDR * qty;
+        const sub = cbmPcs * qty;
+        totalCBM += sub; totalHarga += hargaItem; itemCount++;
+        const subEl = document.getElementById('g-sub-' + id);
+        if (subEl) subEl.innerHTML = `<span class="garment-cbm-sub">${sub.toFixed(4)} CBM</span>`;
+      });
+    }
+
+    const cbmWithBuffer = totalCBM * (1 + CFG.garment_packing_buffer);
+    const seaFee = cbmWithBuffer * CFG.sea_rate_garment;
+    const isMinServiceG = totalHarga < CFG.garment_min_service_threshold;
+    const serviceFee = isMinServiceG ? CFG.service_fee_min_garment : totalHarga * CFG.service_fee_rate_garment;
+
+    const resultEl = document.getElementById('garment-result');
+    const pendingEl = document.getElementById('garment-pending');
+
+    if (itemCount === 0 || totalCBM === 0) {
+      resultEl.style.display = 'none';
+      pendingEl.style.display = 'flex';
+      return;
+    }
+
+    const total = totalHarga + seaFee + serviceFee;
+    resultEl.style.display = 'block';
+    pendingEl.style.display = 'none';
+    document.getElementById('g-result-total').textContent = fmt(total);
+
+    const rows2 = [
+      { label: `💴 Total harga barang (kurs Rp ${Math.round(CNY_TO_IDR).toLocaleString('id-ID')}/CNY)`, val: totalHarga ? fmt(totalHarga) : 'Belum diisi', hl: false },
+      { label: `🚢 Sea freight garment (${cbmWithBuffer.toFixed(4)} CBM setelah penyesuaian kemasan)`, val: fmt(seaFee), hl: true },
+      { label: `🤝 Service fee (${isMinServiceG ? 'minimum' : (CFG.service_fee_rate_garment*100)+'%'})`, val: fmt(serviceFee), hl: true },
+    ];
+    document.getElementById('g-result-rows').innerHTML = rows2.map(r =>
+      `<div class="result-row ${r.hl ? 'hl' : ''}"><span class="r-label">${r.label}</span><span class="r-val ${r.hl ? 'accent' : ''}">${r.val}</span></div>`
+    ).join('');
+  }
+
+  function toggleGarmentDetail() {
+    const body = document.getElementById('g-detail-sections');
+    const trigger = document.getElementById('g-detail-toggle');
+    const sub = document.getElementById('g-ct-sub');
+    const isOpen = body.classList.contains('open');
+    if (isOpen) {
+      body.classList.remove('open'); trigger.classList.remove('open');
+      sub.textContent = 'Dimensi per kategori, sea freight, service fee, dan cara kami hitung';
+    } else {
+      body.classList.add('open'); trigger.classList.add('open');
+      sub.textContent = 'Tap lagi untuk sembunyikan';
+    }
+  }
+  function toggleDetail() {
+    const body = document.getElementById('detail-sections');
+    const trigger = document.getElementById('detail-toggle');
+    const sub = document.getElementById('ct-sub');
+    const isOpen = body.classList.contains('open');
+    if (isOpen) {
+      body.classList.remove('open'); trigger.classList.remove('open');
+      sub.textContent = 'Cara hitung CBM, service fee, dan packing';
+    } else {
+      body.classList.add('open'); trigger.classList.add('open');
+      sub.textContent = 'Tap lagi untuk sembunyikan';
+    }
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  updateKursLabels('');
+  loadConfig().then(() => fetchKurs());
+</script>
+</body>
+</html>

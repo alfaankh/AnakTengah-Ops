@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Pengaturan — Anak Tengah Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --red: #E8311A; --gold: #EE5F28; --dark: #0F0E0D;
+    --ink: #1A1917; --paper: #FAF7F2; --muted: #7A7570;
+    --border: #E2DDD8; --green: #1D7A4A;
+    --blue: #017AFF; --lime: #83C503; --yellow: #FFE54D; --orange: #D94F1A;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-text-size-adjust:100%; }
+  html { font-size:16px; }
+  body { background:var(--paper); font-family:'DM Sans','Helvetica Neue',Arial,sans-serif; color:var(--ink); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  .inner { max-width:820px; margin:0 auto; padding:0 20px; }
+
+  /* PIN GATE */
+  .pin-gate {
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .pin-box {
+    background:white; border-radius:14px; padding:36px 32px; max-width:340px; width:100%;
+    box-shadow:0 4px 24px rgba(0,0,0,0.08); text-align:center;
+  }
+  .pin-box .pb-icon { font-size:32px; margin-bottom:12px; }
+  .pin-box h2 { font-family:'Plus Jakarta Sans',sans-serif; font-size:18px; font-weight:800; margin-bottom:6px; }
+  .pin-box p { font-size:13px; color:var(--muted); margin-bottom:20px; }
+  .pin-input {
+    width:100%; border:1.5px solid var(--border); border-radius:8px; padding:14px;
+    font-family:'DM Mono',monospace; font-size:22px; text-align:center; letter-spacing:8px;
+    outline:none; margin-bottom:14px;
+  }
+  .pin-input:focus { border-color:var(--blue); }
+  .pin-submit {
+    width:100%; background:var(--blue); color:white; border:none; border-radius:8px;
+    padding:12px; font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:700;
+    cursor:pointer;
+  }
+  .pin-submit:hover { background:#0060cc; }
+  .pin-error { color:var(--red); font-size:12.5px; margin-top:10px; display:none; }
+  .pin-error.show { display:block; }
+
+  /* MAIN PANEL */
+  .panel-wrap { display:none; }
+  .panel-wrap.show { display:block; }
+
+  .topbar { background:var(--dark); color:white; padding:18px 0; }
+  .topbar .inner { display:flex; justify-content:space-between; align-items:center; }
+  .topbar .tb-brand { font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:800; color:var(--yellow); }
+  .topbar .tb-sub { font-size:11px; color:rgba(255,255,255,0.5); margin-top:1px; }
+  .topbar .tb-actions { display:flex; gap:8px; align-items:center; }
+  .topbar .tb-link { color:rgba(255,255,255,0.7); font-size:12px; text-decoration:none; padding:6px 12px; }
+  .topbar .tb-link:hover { color:white; }
+  .topbar .tb-logout { background:none; border:1px solid rgba(255,255,255,0.25); color:rgba(255,255,255,0.7); padding:6px 14px; border-radius:6px; font-size:12px; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; }
+  .topbar .tb-logout:hover { border-color:rgba(255,255,255,0.5); color:white; }
+
+  /* iPad-Settings-style layout: sidebar left, panel right.
+     Collapses to a top dropdown on mobile. */
+  .settings-layout { display:flex; gap:24px; align-items:flex-start; padding-top:24px; }
+  .settings-sidebar { flex:0 0 220px; position:sticky; top:24px; background:white; border:1px solid var(--border); border-radius:12px; padding:8px; }
+  .settings-nav-btn { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:11px 14px; border:none; background:none; border-radius:8px; font-family:'Plus Jakarta Sans',sans-serif; font-size:13.5px; font-weight:600; color:var(--muted); cursor:pointer; margin-bottom:2px; transition:background 0.12s; }
+  .settings-nav-btn:hover { background:var(--paper); color:var(--ink); }
+  .settings-nav-btn.active { background:var(--gold); color:white; }
+  .settings-nav-btn .nav-ico { font-size:16px; flex:0 0 auto; }
+  .settings-panel { flex:1; min-width:0; }
+  .settings-mobile-select { display:none; }
+
+  .tab-content { display:none; padding:0 0 60px; }
+  .tab-content.active { display:block; }
+  .tab-content .settings-panel-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:20px; font-weight:800; color:var(--ink); margin-bottom:4px; letter-spacing:-0.02em; }
+  .tab-content .settings-panel-sub { font-size:13px; color:var(--muted); margin-bottom:20px; }
+
+  @media (max-width: 768px) {
+    .settings-layout { flex-direction:column; gap:16px; }
+    .settings-sidebar { display:none; }
+    .settings-mobile-select { display:block; width:100%; }
+    .settings-mobile-select select { width:100%; box-sizing:border-box; padding:13px 14px; font-size:15px; border:1.5px solid var(--border); border-radius:10px; background:white; font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; color:var(--ink); }
+    .settings-panel { width:100%; }
+  }
+
+  .card { background:white; border:1px solid var(--border); border-radius:10px; padding:20px; margin-bottom:16px; }
+  .card-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--ink); margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
+  .card-title .badge { font-size:10px; font-weight:600; color:var(--muted); text-transform:none; letter-spacing:0; background:var(--paper); padding:3px 8px; border-radius:20px; }
+
+  .param-row {
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:11px 0; border-bottom:1px solid var(--border);
+  }
+  .param-row:last-child { border-bottom:none; }
+  .param-label { font-size:13px; color:var(--ink); flex:1; }
+  .param-label .pl-unit { font-size:11px; color:var(--muted); display:block; margin-top:2px; }
+  .avail-toggle { position:relative; display:inline-block; width:44px; height:24px; flex:0 0 auto; }
+  .avail-toggle input { opacity:0; width:0; height:0; }
+  .avail-toggle-slider { position:absolute; cursor:pointer; inset:0; background:#ccc; border-radius:24px; transition:0.2s; }
+  .avail-toggle-slider:before { position:absolute; content:""; height:18px; width:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:0.2s; }
+  .avail-toggle input:checked + .avail-toggle-slider { background:var(--lime); }
+  .avail-toggle input:checked + .avail-toggle-slider:before { transform:translateX(20px); }
+  .param-input-wrap { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .param-input {
+    width:140px; border:1.5px solid var(--border); border-radius:6px; padding:8px 10px;
+    font-family:'DM Mono',monospace; font-size:13px; text-align:right; outline:none;
+    transition:border-color 0.15s;
+  }
+  .param-input:focus { border-color:var(--blue); }
+  .param-input.dirty { border-color:var(--gold); background:#FFFBF0; }
+  .param-save-btn {
+    background:var(--lime); color:white; border:none; border-radius:6px; padding:8px 12px;
+    font-size:11.5px; font-weight:700; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif;
+    opacity:0; pointer-events:none; transition:opacity 0.15s;
+  }
+  .param-save-btn.show { opacity:1; pointer-events:auto; }
+  .param-save-btn:hover { background:#729f03; }
+  .param-saved-check { color:var(--green); font-size:16px; opacity:0; transition:opacity 0.3s; }
+  .param-saved-check.show { opacity:1; }
+
+  .gcat-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .gcat-table th { text-align:left; font-size:10.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.3px; padding:8px 6px; border-bottom:1.5px solid var(--border); }
+  .gcat-table td { padding:6px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .gcat-table input[type=text], .gcat-table input[type=number] {
+    width:100%; border:1.5px solid var(--border); border-radius:5px; padding:6px 8px;
+    font-family:'DM Sans',sans-serif; font-size:12.5px; outline:none;
+  }
+  .gcat-table input:focus { border-color:var(--blue); }
+  .gcat-table .gc-dim { width:60px; }
+  .gcat-table .gc-cbm { font-family:'DM Mono',monospace; font-size:11.5px; color:var(--muted); white-space:nowrap; }
+  .gcat-row-btn { background:none; border:none; cursor:pointer; font-size:14px; padding:4px 6px; border-radius:4px; }
+  .gcat-row-btn.save { color:var(--green); }
+  .gcat-row-btn.delete { color:var(--muted); }
+  .gcat-row-btn.delete:hover { color:var(--red); }
+  .gcat-row.inactive { opacity:0.4; }
+  .add-gcat-btn {
+    width:100%; background:none; border:1.5px dashed var(--border); border-radius:8px;
+    padding:12px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; margin-top:10px;
+  }
+  .add-gcat-btn:hover { border-color:var(--gold); color:var(--gold); }
+
+  .pm-card { border:1.5px solid var(--border); border-radius:8px; padding:14px; margin-bottom:10px; }
+  .pm-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px; }
+  .pm-row label { display:block; font-size:10.5px; font-weight:600; color:var(--muted); text-transform:uppercase; margin-bottom:4px; }
+  .pm-row input { width:100%; border:1.5px solid var(--border); border-radius:6px; padding:8px 10px; font-size:13px; outline:none; }
+  .pm-toggle-row { display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+  .pm-active-label { font-size:12.5px; color:var(--muted); }
+  .toggle-switch { position:relative; width:38px; height:20px; }
+  .toggle-switch input { opacity:0; width:0; height:0; }
+  .toggle-slider { position:absolute; cursor:pointer; inset:0; background:var(--border); border-radius:20px; transition:0.2s; }
+  .toggle-slider::before { content:''; position:absolute; height:14px; width:14px; left:3px; bottom:3px; background:white; border-radius:50%; transition:0.2s; }
+  input:checked + .toggle-slider { background:var(--lime); }
+  input:checked + .toggle-slider::before { transform:translateX(18px); }
+  .add-pm-btn {
+    width:100%; background:none; border:1.5px dashed var(--border); border-radius:8px;
+    padding:12px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer;
+  }
+  .add-pm-btn:hover { border-color:var(--gold); color:var(--gold); }
+  .pm-remove { background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; float:right; }
+  .pm-remove:hover { color:var(--red); }
+
+  .toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px);
+    background:var(--dark); color:white; padding:12px 20px; border-radius:8px; font-size:13px;
+    font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; transition:transform 0.3s; z-index:100;
+    box-shadow:0 4px 20px rgba(0,0,0,0.2);
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+  .toast.error { background:var(--red); }
+
+  .pin-change-row { margin-bottom:14px; }
+  .pcr-label { display:block; font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px; }
+  .pcr-input {
+    width:100%; border:1.5px solid var(--border); border-radius:8px; padding:11px 14px;
+    font-family:'DM Mono',monospace; font-size:16px; letter-spacing:4px; outline:none;
+  }
+  .pcr-input:focus { border-color:var(--blue); }
+  .pin-change-error { color:var(--red); font-size:12.5px; margin-bottom:12px; min-height:16px; }
+  .pin-change-btn {
+    width:100%; background:var(--dark); color:white; border:none; border-radius:8px;
+    padding:13px; font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:700;
+    cursor:pointer;
+  }
+  .pin-change-btn:hover { background:#2a2825; }
+
+  @media (max-width:600px) {
+    .param-row { flex-direction:column; align-items:flex-start; gap:8px; }
+    .param-input-wrap { width:100%; }
+    .param-input { flex:1; width:auto; }
+    .pm-row { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ═══════════ PIN GATE ═══════════ -->
+  <div class="pin-gate" id="pinGate">
+    <div class="pin-box">
+      <div class="pb-icon">🔒</div>
+      <h2>Panel Admin</h2>
+      <p>Masukkan PIN untuk mengakses pengaturan harga &amp; parameter</p>
+      <input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="••••" autofocus>
+      <button class="pin-submit" onclick="checkPin()">Masuk</button>
+      <div class="pin-error" id="pinError">PIN salah, coba lagi.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MAIN PANEL ═══════════ -->
+  <div class="panel-wrap" id="panelWrap">
+
+    <div class="topbar">
+      <div class="inner">
+        <div>
+          <div class="tb-brand">Anak Tengah</div>
+          <div class="tb-sub">Panel Pengaturan</div>
+        </div>
+        <div class="tb-actions">
+          <a href="dashboard.html" class="tb-link">← Dashboard</a>
+          <button class="tb-logout" onclick="logout()">Keluar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="inner">
+      <div class="settings-layout">
+        <nav class="settings-sidebar">
+          <button class="settings-nav-btn active" data-tab="exchange" onclick="switchTab('exchange')"><span class="nav-ico">💱</span> Kurs</button>
+          <button class="settings-nav-btn" data-tab="dimension" onclick="switchTab('dimension')"><span class="nav-ico">📦</span> Regular Item</button>
+          <button class="settings-nav-btn" data-tab="garment" onclick="switchTab('garment')"><span class="nav-ico">👕</span> Garment</button>
+          <button class="settings-nav-btn" data-tab="handcarry" onclick="switchTab('handcarry')"><span class="nav-ico">✈️</span> Hand Carry</button>
+          <button class="settings-nav-btn" data-tab="aircargo" onclick="switchTab('aircargo')"><span class="nav-ico">🛫</span> Air Cargo</button>
+          <button class="settings-nav-btn" data-tab="availability" onclick="switchTab('availability')"><span class="nav-ico">🚦</span> Ketersediaan</button>
+          <button class="settings-nav-btn" data-tab="actualcost" onclick="switchTab('actualcost')"><span class="nav-ico">💰</span> Biaya Aktual</button>
+          <button class="settings-nav-btn" data-tab="categories" onclick="switchTab('categories')"><span class="nav-ico">📋</span> Kategori Garment</button>
+          <button class="settings-nav-btn" data-tab="payment" onclick="switchTab('payment')"><span class="nav-ico">💳</span> Pembayaran</button>
+          <button class="settings-nav-btn" data-tab="security" onclick="switchTab('security')"><span class="nav-ico">🔒</span> Keamanan</button>
+        </nav>
+
+        <div class="settings-mobile-select">
+          <select onchange="switchTab(this.value)" id="mobileTabSelect">
+            <option value="exchange">💱 Kurs</option>
+            <option value="dimension">📦 Regular Item</option>
+            <option value="garment">👕 Garment</option>
+            <option value="handcarry">✈️ Hand Carry</option>
+            <option value="aircargo">🛫 Air Cargo</option>
+            <option value="availability">🚦 Ketersediaan</option>
+            <option value="actualcost">💰 Biaya Aktual</option>
+            <option value="categories">📋 Kategori Garment</option>
+            <option value="payment">💳 Pembayaran</option>
+            <option value="security">🔒 Keamanan</option>
+          </select>
+        </div>
+
+        <div class="settings-panel">
+
+      <!-- EXCHANGE RATE TAB -->
+      <div class="tab-content active" id="tab-exchange">
+        <div class="settings-panel-title">Kurs CNY → IDR</div>
+        <div class="settings-panel-sub">Nilai tukar yang dipakai di semua kalkulasi harga.</div>
+        <div class="card">
+          <div class="card-title">Kurs CNY → IDR <span class="badge">mempengaruhi semua kalkulasi</span></div>
+          <div id="params-exchange_rate"></div>
+        </div>
+      </div>
+
+      <!-- DIMENSION MODE TAB -->
+      <div class="tab-content" id="tab-dimension">
+        <div class="settings-panel-title">Regular Item</div>
+        <div class="settings-panel-sub">Tarif untuk barang reguler (dihitung per volume/CBM).</div>
+        <div class="card">
+          <div class="card-title">Sea Freight &amp; Service Fee</div>
+          <div id="params-dimension_mode_main"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Packing Fee Tiers</div>
+          <div id="params-dimension_mode_packing"></div>
+        </div>
+      </div>
+
+      <!-- GARMENT MODE TAB -->
+      <div class="tab-content" id="tab-garment">
+        <div class="settings-panel-title">Garment</div>
+        <div class="settings-panel-sub">Tarif khusus pakaian & tekstil.</div>
+        <div class="card">
+          <div class="card-title">Sea Freight &amp; Service Fee Garment</div>
+          <div id="params-garment_mode"></div>
+        </div>
+      </div>
+
+      <!-- HAND CARRY TAB -->
+      <div class="tab-content" id="tab-handcarry">
+        <div class="settings-panel-title">Hand Carry</div>
+        <div class="settings-panel-sub">Dihitung per kg (berat aktual atau volumetrik, mana yang lebih besar). Harga per kg spesifik diatur per-trip di dashboard.</div>
+        <div class="card" style="border-color:#CFE3FF;background:#F7FAFF;">
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin:0;">
+            ✈️ Parameter di sini bersifat <b style="color:var(--ink);">global</b>. Biaya tiket &amp; kapasitas luggage diatur per-trip di <b>Trip Hand-Carry</b> (dashboard). Tarif estimasi di bawah hanya untuk perkiraan di form order sebelum trip ditentukan.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">Parameter Hand Carry</div>
+          <div id="params-handcarry"></div>
+        </div>
+      </div>
+
+      <!-- AIR CARGO TAB -->
+      <div class="tab-content" id="tab-aircargo">
+        <div class="settings-panel-title">Air Cargo</div>
+        <div class="settings-panel-sub">Sama seperti Paket Gabungan (sea), tapi dihitung per kg bukan per CBM. Biaya real shipment diatur di tab Air Cargo (dashboard).</div>
+        <div class="card" style="border-color:#CFE3FF;background:#F7FAFF;">
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin:0;">
+            🛫 Parameter di sini bersifat <b style="color:var(--ink);">global</b>. Biaya shipment aktual diatur per-shipment di <b>Air Cargo</b> (dashboard). Tarif estimasi di bawah hanya untuk perkiraan di form order sebelum shipment ditentukan.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">Parameter Air Cargo</div>
+          <div id="params-air"></div>
+        </div>
+      </div>
+
+      <!-- AVAILABILITY TAB -->
+      <div class="tab-content" id="tab-availability">
+        <div class="settings-panel-title">Ketersediaan Metode Pengiriman</div>
+        <div class="settings-panel-sub">Matikan metode yang sedang tidak tersedia — kartunya akan abu-abu &amp; tidak bisa dipilih di form order customer.</div>
+        <div class="card">
+          <div class="card-title">Metode Aktif</div>
+          <div id="params-availability"></div>
+        </div>
+      </div>
+
+      <!-- ACTUAL COST TAB -->
+      <div class="tab-content" id="tab-actualcost">
+        <div class="settings-panel-title">Biaya Aktual</div>
+        <div class="settings-panel-sub">Biaya internal nyata — dipakai untuk hitung profit, tidak ditampilkan ke customer.</div>
+        <div class="card" style="border-color:#FFD9C7;background:#FFFBF8;">
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin:0;">
+            ⚠️ <b style="color:var(--ink);">Ini biaya nyata yang kamu keluarkan</b>, bukan yang ditagih ke customer. Selisih antara tarif customer (tab Regular Item / Garment) dan tarif aktual di sini adalah margin/profit kamu. Data ini <b>tidak pernah</b> ditampilkan ke customer.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">Tarif Forwarder Aktual <span class="badge">vs tarif customer</span></div>
+          <div id="params-actual_freight"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Markup Ongkir Lokal China</div>
+          <div id="params-actual_china_shipping"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Biaya Packing Aktual</div>
+          <div id="params-actual_packing"></div>
+        </div>
+      </div>
+
+      <!-- GARMENT CATEGORIES TAB -->
+      <div class="tab-content" id="tab-categories">
+        <div class="settings-panel-title">Kategori Garment</div>
+        <div class="settings-panel-sub">Daftar kategori pakaian beserta estimasi volumenya.</div>
+        <div class="card">
+          <div class="card-title">Kategori &amp; Dimensi Garment <span class="badge" id="gcatCount">0 kategori</span></div>
+          <div style="overflow-x:auto;">
+            <table class="gcat-table">
+              <thead>
+                <tr>
+                  <th>Nama Kategori</th>
+                  <th class="gc-dim">P (cm)</th>
+                  <th class="gc-dim">L (cm)</th>
+                  <th class="gc-dim">T (cm)</th>
+                  <th>CBM/pcs</th>
+                  <th>Aktif</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="gcatRows"></tbody>
+            </table>
+          </div>
+          <button class="add-gcat-btn" onclick="addGarmentCategory()">+ Tambah Kategori Baru</button>
+        </div>
+      </div>
+
+      <!-- PAYMENT METHODS TAB -->
+      <div class="tab-content" id="tab-payment">
+        <div class="settings-panel-title">Pembayaran</div>
+        <div class="settings-panel-sub">Rekening & metode pembayaran yang tampil di invoice.</div>
+        <div class="card">
+          <div class="card-title">Metode Pembayaran <span class="badge">tampil di form customer</span></div>
+          <div id="pmList"></div>
+          <button class="add-pm-btn" onclick="addPaymentMethod()">+ Tambah Metode Pembayaran</button>
+        </div>
+      </div>
+
+      <!-- SECURITY TAB -->
+      <div class="tab-content" id="tab-security">
+        <div class="settings-panel-title">Keamanan</div>
+        <div class="settings-panel-sub">PIN akses panel admin.</div>
+        <div class="card" style="max-width:420px;">
+          <div class="card-title">Ganti PIN Admin</div>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+            PIN ini melindungi akses ke panel pengaturan harga. Ganti secara berkala, dan jangan bagikan ke siapapun selain admin (kamu &amp; istri).
+          </p>
+          <div class="pin-change-row">
+            <label class="pcr-label">PIN Saat Ini</label>
+            <input type="password" inputmode="numeric" maxlength="6" class="pcr-input" id="currentPinInput" placeholder="••••">
+          </div>
+          <div class="pin-change-row">
+            <label class="pcr-label">PIN Baru (min. 4 digit)</label>
+            <input type="password" inputmode="numeric" maxlength="6" class="pcr-input" id="newPinInput" placeholder="••••">
+          </div>
+          <div class="pin-change-row">
+            <label class="pcr-label">Konfirmasi PIN Baru</label>
+            <input type="password" inputmode="numeric" maxlength="6" class="pcr-input" id="confirmPinInput" placeholder="••••">
+          </div>
+          <div class="pin-change-error" id="pinChangeError"></div>
+          <button class="pin-change-btn" onclick="changePin()">Simpan PIN Baru</button>
+        </div>
+      </div>
+
+        </div><!-- /settings-panel -->
+      </div><!-- /settings-layout -->
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL = 'https://somdevhztgbsjkgqwman.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_WCgYHl38IazRNDVAW-cqkw_5HOeUec7';
+  let sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const SESSION_KEY = 'at_admin_secret'; // shared key name with dashboard.html so unlocking one unlocks the other in the same tab
+
+  // Reconfigures the client to attach the admin secret header — same pattern
+  // as dashboard.html. RLS policies require this header for anything beyond
+  // public order-submission/search, since both admin and public traffic share
+  // the same anon API key and Postgres needs a signal to tell them apart.
+  function initAdminClient(secret) {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { 'x-admin-secret': secret } }
+    });
+  }
+  const savedSecret = sessionStorage.getItem(SESSION_KEY);
+  if (savedSecret) initAdminClient(savedSecret);
+
+  // ============================================================
+  // PIN GATE
+  // ============================================================
+  async function checkPin() {
+    const input = document.getElementById('pinInput');
+    const errEl = document.getElementById('pinError');
+    const attempt = input.value.trim();
+    if (!attempt) return;
+
+    try {
+      const { data, error } = await sb.rpc('verify_admin_pin', { attempt });
+      if (error) throw error;
+      if (data) { // non-empty secret string = correct PIN
+        sessionStorage.setItem(SESSION_KEY, data);
+        initAdminClient(data);
+        showPanel();
+      } else {
+        errEl.classList.add('show');
+        input.value = '';
+        input.focus();
+      }
+    } catch (e) {
+      console.error(e);
+      errEl.textContent = 'Terjadi kesalahan, coba lagi.';
+      errEl.classList.add('show');
+    }
+  }
+
+  document.getElementById('pinInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkPin();
+  });
+
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    location.reload();
+  }
+
+  async function changePin() {
+    const currentPin = document.getElementById('currentPinInput').value.trim();
+    const newPin = document.getElementById('newPinInput').value.trim();
+    const confirmPin = document.getElementById('confirmPinInput').value.trim();
+    const errEl = document.getElementById('pinChangeError');
+    errEl.textContent = '';
+
+    if (!currentPin || !newPin || !confirmPin) {
+      errEl.textContent = 'Semua kolom wajib diisi.';
+      return;
+    }
+    if (newPin.length < 4) {
+      errEl.textContent = 'PIN baru minimal 4 digit.';
+      return;
+    }
+    if (newPin !== confirmPin) {
+      errEl.textContent = 'Konfirmasi PIN baru tidak cocok.';
+      return;
+    }
+    if (newPin === currentPin) {
+      errEl.textContent = 'PIN baru tidak boleh sama dengan PIN lama.';
+      return;
+    }
+
+    try {
+      const { data, error } = await sb.rpc('change_admin_pin', { current_pin: currentPin, new_pin: newPin });
+      if (error) throw error;
+      if (data) { // non-empty secret = success; also rotates the admin secret
+        sessionStorage.setItem(SESSION_KEY, data);
+        initAdminClient(data); // re-attach the NEW secret so this session keeps working
+        document.getElementById('currentPinInput').value = '';
+        document.getElementById('newPinInput').value = '';
+        document.getElementById('confirmPinInput').value = '';
+        showToast('PIN berhasil diubah. Sesi lain (device lain) perlu login ulang.');
+      } else {
+        errEl.textContent = 'PIN saat ini salah.';
+      }
+    } catch (e) {
+      console.error(e);
+      errEl.textContent = e.message && e.message.includes('minimal') ? e.message : 'Gagal mengubah PIN, coba lagi.';
+    }
+  }
+
+  function showPanel() {
+    document.getElementById('pinGate').style.display = 'none';
+    document.getElementById('panelWrap').classList.add('show');
+    loadAllData();
+  }
+
+  if (sessionStorage.getItem(SESSION_KEY)) {
+    showPanel();
+  }
+
+  // ============================================================
+  // TABS
+  // ============================================================
+  function switchTab(tab) {
+    document.querySelectorAll('.settings-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    const mobileSel = document.getElementById('mobileTabSelect');
+    if (mobileSel && mobileSel.value !== tab) mobileSel.value = tab;
+    // scroll panel into view on mobile after selecting
+    if (window.innerWidth <= 768) document.querySelector('.settings-panel').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  // ============================================================
+  // TOAST
+  // ============================================================
+  let toastTimer;
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.toggle('error', isError);
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ============================================================
+  // PRICING CONFIG PARAMS
+  // ============================================================
+  const PACKING_KEYS = new Set([
+    'packing_fee_small','packing_fee_medium','packing_fee_large','packing_fee_xl',
+    'packing_tier_small_max_cbm','packing_tier_medium_max_cbm','packing_tier_large_max_cbm'
+  ]);
+  const ACTUAL_FREIGHT_KEYS = new Set(['actual_sea_rate_dimension','actual_sea_rate_garment']);
+  const ACTUAL_PACKING_KEYS = new Set(['actual_packing_fee_small','actual_packing_fee_medium','actual_packing_fee_large','actual_packing_fee_xl']);
+
+  let pricingConfigCache = {};
+
+  async function loadPricingConfig() {
+    const { data, error } = await sb.from('pricing_config').select('*').order('key');
+    if (error) { showToast('Gagal memuat konfigurasi harga', true); return; }
+    pricingConfigCache = {};
+    data.forEach(row => pricingConfigCache[row.key] = row);
+    renderParams();
+  }
+
+  function fmtUnit(unit) {
+    if (unit === 'percent') return '× 100 = %';
+    return unit || '';
+  }
+
+  function renderParamGroup(containerId, rows) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = renderParamGroupHtml(rows);
+  }
+
+  function renderParams() {
+    const all = Object.values(pricingConfigCache);
+    renderParamGroup('params-exchange_rate', all.filter(r => r.category === 'exchange_rate'));
+    renderParamGroup('params-dimension_mode_main', all.filter(r => r.category === 'dimension_mode' && !PACKING_KEYS.has(r.key)));
+    renderParamGroup('params-dimension_mode_packing', all.filter(r => r.category === 'dimension_mode' && PACKING_KEYS.has(r.key)));
+    renderParamGroup('params-garment_mode', all.filter(r => r.category === 'garment_mode'));
+    renderParamGroup('params-handcarry', all.filter(r => r.category === 'handcarry'));
+    renderParamGroup('params-air', all.filter(r => r.category === 'air'));
+    renderAvailabilityGroup('params-availability', all.filter(r => r.category === 'availability'));
+    renderFreightMarginGroup('params-actual_freight', all);
+    renderParamGroup('params-actual_china_shipping', all.filter(r => r.key === 'china_local_shipping_markup_rate'));
+    renderParamGroup('params-actual_packing', all.filter(r => r.category === 'actual_cost' && ACTUAL_PACKING_KEYS.has(r.key)));
+  }
+
+  function renderFreightMarginGroup(containerId, all) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const pairs = [
+      { customerKey: 'sea_rate_dimension', actualKey: 'actual_sea_rate_dimension', label: 'Regular Item' },
+      { customerKey: 'sea_rate_garment', actualKey: 'actual_sea_rate_garment', label: 'Garment' },
+    ];
+    const rows = all.filter(r => ACTUAL_FREIGHT_KEYS.has(r.key));
+    let html = renderParamGroupHtml(rows);
+
+    // Add margin preview below the inputs
+    const marginHtml = pairs.map(p => {
+      const customerRow = pricingConfigCache[p.customerKey];
+      const actualRow = pricingConfigCache[p.actualKey];
+      if (!customerRow || !actualRow) return '';
+      const margin = parseFloat(customerRow.value) - parseFloat(actualRow.value);
+      const marginPct = (margin / parseFloat(actualRow.value) * 100).toFixed(1);
+      return `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--paper);border-radius:6px;margin-top:6px;font-size:12px;">
+        <span style="color:var(--muted);">Margin ${p.label} (tarif customer − aktual)</span>
+        <span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--green);">Rp ${Math.round(margin).toLocaleString('id-ID')}/CBM (+${marginPct}%)</span>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = html + marginHtml;
+  }
+
+  const METHOD_LABELS = { sea_available: '🚢 Sea Freight', handcarry_available: '✈️ Hand-Carry', air_available: '🛫 Air Cargo' };
+  function renderAvailabilityGroup(containerId, rows) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = rows.map(row => {
+      const on = row.value === '1' || row.value === 1 || row.value === true;
+      return `
+      <div class="param-row" style="align-items:center;">
+        <div class="param-label" style="flex:1;">${METHOD_LABELS[row.key] || row.key}</div>
+        <label class="avail-toggle">
+          <input type="checkbox" ${on ? 'checked' : ''} onchange="saveAvailability('${row.key}', this.checked)">
+          <span class="avail-toggle-slider"></span>
+        </label>
+        <span style="font-size:11.5px;color:${on ? 'var(--green)' : 'var(--red)'};margin-left:10px;min-width:60px;">${on ? 'Aktif' : 'Nonaktif'}</span>
+      </div>`;
+    }).join('');
+  }
+
+  async function saveAvailability(key, checked) {
+    const { error } = await sb.from('pricing_config').update({ value: checked ? '1' : '0', updated_at: new Date().toISOString() }).eq('key', key);
+    if (error) { showToast('Gagal menyimpan: ' + error.message, true); return; }
+    pricingConfigCache[key].value = checked ? '1' : '0';
+    showToast(`${METHOD_LABELS[key] || key} ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+    renderAvailabilityGroup('params-availability', Object.values(pricingConfigCache).filter(r => r.category === 'availability'));
+  }
+
+  function renderParamGroupHtml(rows) {
+    return rows.map(row => {
+      const displayValue = row.unit === 'percent' ? (parseFloat(row.value) * 100) : row.value;
+      const step = row.unit === 'percent' ? '0.01' : (row.unit === 'CBM' ? '0.001' : '1');
+      return `
+      <div class="param-row">
+        <div class="param-label">
+          ${row.label}
+          <span class="pl-unit">${row.key} · ${fmtUnit(row.unit)}</span>
+        </div>
+        <div class="param-input-wrap">
+          <input type="number" step="${step}" class="param-input" id="param-${row.key}"
+            value="${displayValue}" data-key="${row.key}" data-unit="${row.unit}"
+            oninput="markDirty('${row.key}')">
+          <button class="param-save-btn" id="save-${row.key}" onclick="saveParam('${row.key}')">Simpan</button>
+          <span class="param-saved-check" id="check-${row.key}">✓</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function markDirty(key) {
+    document.getElementById('param-' + key).classList.add('dirty');
+    document.getElementById('save-' + key).classList.add('show');
+    document.getElementById('check-' + key).classList.remove('show');
+  }
+
+  async function saveParam(key) {
+    const input = document.getElementById('param-' + key);
+    const unit = input.dataset.unit;
+    let newValue = parseFloat(input.value);
+    if (isNaN(newValue)) { showToast('Nilai tidak valid', true); return; }
+    if (unit === 'percent') newValue = newValue / 100;
+
+    const { error } = await sb.from('pricing_config').update({ value: newValue, updated_at: new Date().toISOString() }).eq('key', key);
+    if (error) { showToast('Gagal menyimpan: ' + error.message, true); return; }
+
+    input.classList.remove('dirty');
+    document.getElementById('save-' + key).classList.remove('show');
+    const check = document.getElementById('check-' + key);
+    check.classList.add('show');
+    setTimeout(() => check.classList.remove('show'), 1500);
+    showToast(`${key} berhasil diperbarui`);
+    pricingConfigCache[key].value = newValue;
+
+    // Keep the margin comparison display in sync if a freight rate changed
+    if (ACTUAL_FREIGHT_KEYS.has(key) || key === 'sea_rate_dimension' || key === 'sea_rate_garment') {
+      renderFreightMarginGroup('params-actual_freight', Object.values(pricingConfigCache));
+    }
+  }
+
+  // ============================================================
+  // GARMENT CATEGORIES
+  // ============================================================
+  let garmentCatCache = [];
+
+  async function loadGarmentCategories() {
+    const { data, error } = await sb.from('garment_categories').select('*').order('sort_order');
+    if (error) { showToast('Gagal memuat kategori garment', true); return; }
+    garmentCatCache = data;
+    renderGarmentCategories();
+  }
+
+  function renderGarmentCategories() {
+    const tbody = document.getElementById('gcatRows');
+    document.getElementById('gcatCount').textContent = `${garmentCatCache.filter(c=>c.is_active).length} aktif / ${garmentCatCache.length} total`;
+
+    tbody.innerHTML = garmentCatCache.map(cat => {
+      const cbm = (cat.panjang_cm * cat.lebar_cm * cat.tebal_cm / 1e6).toFixed(4);
+      return `
+      <tr class="gcat-row ${!cat.is_active ? 'inactive' : ''}" data-id="${cat.id}">
+        <td><input type="text" value="${cat.label}" onchange="updateGcatField('${cat.id}','label',this.value)"></td>
+        <td class="gc-dim"><input type="number" value="${cat.panjang_cm}" onchange="updateGcatField('${cat.id}','panjang_cm',this.value)"></td>
+        <td class="gc-dim"><input type="number" value="${cat.lebar_cm}" onchange="updateGcatField('${cat.id}','lebar_cm',this.value)"></td>
+        <td class="gc-dim"><input type="number" value="${cat.tebal_cm}" onchange="updateGcatField('${cat.id}','tebal_cm',this.value)"></td>
+        <td class="gc-cbm">${cbm}</td>
+        <td>
+          <label class="toggle-switch">
+            <input type="checkbox" ${cat.is_active ? 'checked' : ''} onchange="toggleGcatActive('${cat.id}', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </td>
+        <td><button class="gcat-row-btn delete" onclick="deleteGcat('${cat.id}')" title="Hapus permanen">🗑</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function updateGcatField(id, field, value) {
+    const val = (field === 'label') ? value : parseFloat(value);
+    const { error } = await sb.from('garment_categories').update({ [field]: val }).eq('id', id);
+    if (error) { showToast('Gagal menyimpan: ' + error.message, true); return; }
+    const cat = garmentCatCache.find(c => c.id === id);
+    if (cat) cat[field] = val;
+    renderGarmentCategories();
+    showToast('Kategori diperbarui');
+  }
+
+  async function toggleGcatActive(id, isActive) {
+    const { error } = await sb.from('garment_categories').update({ is_active: isActive }).eq('id', id);
+    if (error) { showToast('Gagal menyimpan: ' + error.message, true); return; }
+    const cat = garmentCatCache.find(c => c.id === id);
+    if (cat) cat.is_active = isActive;
+    renderGarmentCategories();
+    showToast(isActive ? 'Kategori diaktifkan' : 'Kategori dinonaktifkan');
+  }
+
+  async function deleteGcat(id) {
+    if (!confirm('Hapus kategori ini secara permanen? Tindakan ini tidak bisa dibatalkan.')) return;
+    const { error } = await sb.from('garment_categories').delete().eq('id', id);
+    if (error) { showToast('Gagal menghapus: ' + error.message, true); return; }
+    garmentCatCache = garmentCatCache.filter(c => c.id !== id);
+    renderGarmentCategories();
+    showToast('Kategori dihapus');
+  }
+
+  async function addGarmentCategory() {
+    const maxSort = garmentCatCache.reduce((m, c) => Math.max(m, c.sort_order || 0), 0);
+    const { data, error } = await sb.from('garment_categories').insert({
+      label: 'Kategori Baru', panjang_cm: 30, lebar_cm: 25, tebal_cm: 3,
+      sort_order: maxSort + 1, is_active: true
+    }).select().single();
+    if (error) { showToast('Gagal menambah kategori: ' + error.message, true); return; }
+    garmentCatCache.push(data);
+    renderGarmentCategories();
+    showToast('Kategori baru ditambahkan, silakan edit detailnya');
+  }
+
+  // ============================================================
+  // PAYMENT METHODS
+  // ============================================================
+  let paymentMethodsCache = [];
+
+  async function loadPaymentMethods() {
+    const { data, error } = await sb.from('payment_methods').select('*').order('sort_order');
+    if (error) { showToast('Gagal memuat metode pembayaran', true); return; }
+    paymentMethodsCache = data;
+    renderPaymentMethods();
+  }
+
+  function renderPaymentMethods() {
+    const el = document.getElementById('pmList');
+    if (paymentMethodsCache.length === 0) {
+      el.innerHTML = '<p style="font-size:13px;color:var(--muted);">Belum ada metode pembayaran.</p>';
+      return;
+    }
+    el.innerHTML = paymentMethodsCache.map(pm => `
+      <div class="pm-card" data-id="${pm.id}">
+        <button class="pm-remove" onclick="deletePaymentMethod('${pm.id}')">✕ Hapus</button>
+        <div class="pm-row">
+          <div>
+            <label>Tipe</label>
+            <select onchange="updatePmField('${pm.id}','type',this.value)" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;">
+              <option value="bank_transfer" ${pm.type==='bank_transfer'?'selected':''}>Transfer Bank</option>
+              <option value="qris" ${pm.type==='qris'?'selected':''}>QRIS</option>
+            </select>
+          </div>
+          <div>
+            <label>Label</label>
+            <input type="text" value="${pm.label||''}" placeholder="cth: BCA - Fan" onchange="updatePmField('${pm.id}','label',this.value)">
+          </div>
+        </div>
+        ${pm.type === 'bank_transfer' ? `
+        <div class="pm-row">
+          <div>
+            <label>No. Rekening</label>
+            <input type="text" value="${pm.account_number||''}" onchange="updatePmField('${pm.id}','account_number',this.value)">
+          </div>
+          <div>
+            <label>Nama Pemilik</label>
+            <input type="text" value="${pm.account_holder||''}" onchange="updatePmField('${pm.id}','account_holder',this.value)">
+          </div>
+        </div>` : `
+        <div class="pm-row">
+          <div style="grid-column:1/-1;">
+            <label>URL Gambar QRIS</label>
+            <input type="text" value="${pm.qris_image_url||''}" placeholder="https://..." onchange="updatePmField('${pm.id}','qris_image_url',this.value)">
+          </div>
+        </div>`}
+        <div class="pm-toggle-row">
+          <span class="pm-active-label">Tampilkan di form customer</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${pm.is_active?'checked':''} onchange="togglePmActive('${pm.id}', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function updatePmField(id, field, value) {
+    const { error } = await sb.from('payment_methods').update({ [field]: value }).eq('id', id);
+    if (error) { showToast('Gagal menyimpan: ' + error.message, true); return; }
+    const pm = paymentMethodsCache.find(p => p.id === id);
+    if (pm) pm[field] = value;
+    if (field === 'type') renderPaymentMethods();
+    showToast('Metode pembayaran diperbarui');
+  }
+
+  async function togglePmActive(id, isActive) {
+    const { error } = await sb.from('payment_methods').update({ is_active: isActive }).eq('id', id);
+    if (error) { showToast('Gagal menyimpan: ' + error.message, true); return; }
+    const pm = paymentMethodsCache.find(p => p.id === id);
+    if (pm) pm.is_active = isActive;
+    showToast(isActive ? 'Metode diaktifkan' : 'Metode dinonaktifkan');
+  }
+
+  async function deletePaymentMethod(id) {
+    if (!confirm('Hapus metode pembayaran ini?')) return;
+    const activeCount = paymentMethodsCache.filter(p => p.is_active).length;
+    const target = paymentMethodsCache.find(p => p.id === id);
+    if (activeCount <= 1 && target?.is_active) {
+      if (!confirm('Ini metode pembayaran aktif terakhir. Customer tidak akan melihat opsi pembayaran apapun jika dihapus. Lanjutkan?')) return;
+    }
+    const { error } = await sb.from('payment_methods').delete().eq('id', id);
+    if (error) { showToast('Gagal menghapus: ' + error.message, true); return; }
+    paymentMethodsCache = paymentMethodsCache.filter(p => p.id !== id);
+    renderPaymentMethods();
+    showToast('Metode pembayaran dihapus');
+  }
+
+  async function addPaymentMethod() {
+    const maxSort = paymentMethodsCache.reduce((m, p) => Math.max(m, p.sort_order || 0), 0);
+    const { data, error } = await sb.from('payment_methods').insert({
+      type: 'bank_transfer', label: 'Bank Baru', account_number: '', account_holder: '',
+      is_active: false, sort_order: maxSort + 1
+    }).select().single();
+    if (error) { showToast('Gagal menambah metode: ' + error.message, true); return; }
+    paymentMethodsCache.push(data);
+    renderPaymentMethods();
+    showToast('Metode baru ditambahkan, lengkapi detail dan aktifkan');
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  function loadAllData() {
+    loadPricingConfig();
+    loadGarmentCategories();
+    loadPaymentMethods();
+  }
+</script>
+</body>
+</html>

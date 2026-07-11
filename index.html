@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Buat Pesanan — Anak Tengah</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --red: #E8311A; --gold: #EE5F28; --dark: #0F0E0D;
+    --ink: #1A1917; --paper: #FAF7F2; --muted: #7A7570;
+    --border: #E2DDD8; --green: #1D7A4A;
+    --blue: #017AFF; --lime: #83C503; --yellow: #FFE54D; --orange: #D94F1A;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-text-size-adjust:100%; }
+  html { font-size:16px; }
+  body { background:var(--paper); font-family:'DM Sans','Helvetica Neue',Arial,sans-serif; color:var(--ink); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  .page { padding:0 0 60px; }
+  .inner { max-width:640px; margin:0 auto; }
+
+  .header { background:var(--blue); color:white; padding:0; position:relative; overflow:hidden; text-align:center; }
+  .header .inner { padding:32px 24px 28px; }
+  .header::before { content:'中'; position:absolute; right:-20px; top:-30px; font-size:180px; color:rgba(255,255,255,0.06); font-family:serif; line-height:1; pointer-events:none; }
+  .header img { max-width:280px; width:75%; height:auto; display:block; margin:0 auto 14px; }
+  .header-tag { display:inline-block; background:var(--lime); color:white; font-family:'Plus Jakarta Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:4px 10px; border-radius:2px; margin-bottom:12px; }
+  .header h1 { font-family:'Plus Jakarta Sans',sans-serif; font-size:24px; font-weight:800; line-height:1.2; }
+  .header p { color:rgba(255,255,255,0.75); font-size:13px; font-weight:300; max-width:400px; margin:8px auto 0; line-height:1.6; }
+
+  .section { padding:28px 24px; border-bottom:1px solid var(--border); background:white; }
+  .section-label { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .method-select-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .method-card { position:relative; display:block; border:1.5px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:border-color 0.15s, background 0.15s; }
+  .method-card input { position:absolute; opacity:0; }
+  .method-card.active, .method-card:has(input:checked) { border-color:var(--gold); background:#FFFBF0; }
+  .method-card.unavailable { opacity:0.45; cursor:not-allowed; background:var(--bg); }
+  .method-card.unavailable:hover { border-color:var(--border); }
+  .mc-unavailable { display:none; font-size:11px; font-weight:700; color:var(--red); margin-top:6px; }
+  .method-card.unavailable .mc-unavailable { display:block; }
+  .method-card .mc-icon { font-size:22px; margin-bottom:6px; }
+  .method-card .mc-title { font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:14px; margin-bottom:4px; }
+  .method-card .mc-sub { font-size:11.5px; color:var(--muted); line-height:1.5; }
+  .handcarry-explainer { margin-top:12px; background:#FFF8E6; border:1px solid #F0D98A; border-radius:10px; padding:12px 14px; font-size:12px; color:#6B5518; line-height:1.6; }
+  .hc-weight-hint { margin-top:-4px; margin-bottom:14px; background:#F5F8FF; border:1px solid #D5E2FF; border-radius:8px; padding:9px 12px; font-size:11.5px; color:#3A5A9C; line-height:1.55; }
+  .hc-weight-hint b { color:#1E3A6E; }
+  @media (max-width:600px) { .method-select-row { grid-template-columns:1fr; } }
+  .section-num { width:24px; height:24px; background:var(--dark); color:white; font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; border-radius:50%; flex-shrink:0; }
+  .section-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+
+  .input-row { display:grid; gap:12px; margin-bottom:14px; }
+  .input-row.two { grid-template-columns:1fr 1fr; }
+  .input-row.three { grid-template-columns:1fr 1fr 1fr; }
+  .input-group label { display:block; font-size:11px; font-weight:600; letter-spacing:0.3px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .input-group label .req { color:var(--red); }
+  .input-group input, .input-group select, .input-group textarea {
+    width:100%; border:1.5px solid var(--border); border-radius:6px; padding:10px 12px;
+    font-family:'DM Sans','Helvetica Neue',Arial,sans-serif; font-size:14px; color:var(--ink);
+    background:var(--paper); transition:border-color 0.2s; outline:none;
+  }
+  .input-group textarea { resize:vertical; min-height:60px; }
+  .input-group input:focus, .input-group select:focus, .input-group textarea:focus { border-color:var(--dark); background:white; }
+  .input-hint { font-size:11.5px; color:var(--muted); margin-top:5px; line-height:1.5; }
+
+  .file-drop {
+    border:1.5px dashed var(--border); border-radius:8px; padding:16px; text-align:center;
+    cursor:pointer; transition:border-color 0.2s; background:var(--paper);
+  }
+  .file-drop:hover { border-color:var(--gold); }
+  .file-drop input[type=file] { display:none; }
+  .file-drop .fd-icon { font-size:20px; margin-bottom:4px; }
+  .file-drop .fd-text { font-size:12px; color:var(--muted); }
+  .file-preview { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .file-preview img { width:56px; height:56px; object-fit:cover; border-radius:6px; border:1.5px solid var(--border); }
+
+  .mode-tabs { display:flex; gap:0; background:var(--border); border-radius:10px; padding:4px; margin-bottom:16px; }
+  .mode-tab { flex:1; padding:8px 12px; border-radius:7px; border:none; background:transparent; font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:600; cursor:pointer; color:var(--muted); transition:all 0.2s; }
+  .mode-tab.active { background:white; color:var(--ink); box-shadow:0 1px 4px rgba(0,0,0,0.12); }
+
+  /* ITEM CARD (cart entry) */
+  .item-card {
+    border:1.5px solid var(--border); border-radius:10px; padding:18px; margin-bottom:14px;
+    background:var(--paper); position:relative;
+  }
+  .item-card-header {
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;
+  }
+  .item-card-title {
+    font-family:'Plus Jakarta Sans',sans-serif; font-size:12.5px; font-weight:700;
+    color:var(--muted); letter-spacing:0.4px; text-transform:uppercase;
+  }
+  .item-remove-btn {
+    background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer;
+    padding:4px 8px; border-radius:5px; font-family:'Plus Jakarta Sans',sans-serif; font-weight:600;
+    transition:color 0.15s;
+  }
+  .item-remove-btn:hover { color:var(--red); }
+  .item-subtotal-bar {
+    display:flex; justify-content:space-between; align-items:center; margin-top:12px;
+    padding-top:12px; border-top:1px solid var(--border);
+  }
+  .item-subtotal-bar .isb-label { font-size:11.5px; color:var(--muted); }
+  .item-subtotal-bar .isb-value { font-family:'DM Mono',monospace; font-size:15px; font-weight:700; color:var(--ink); }
+
+  .add-item-btn {
+    width:100%; background:none; border:1.5px dashed var(--border); border-radius:10px;
+    padding:14px; font-family:'Plus Jakarta Sans',sans-serif; font-size:13.5px; font-weight:700;
+    color:var(--muted); cursor:pointer; transition:all 0.15s; letter-spacing:0.2px;
+  }
+  .add-item-btn:hover { border-color:var(--gold); color:var(--gold); }
+
+  .estimate-box { background:white; border:1.5px solid var(--border); border-radius:10px; overflow:hidden; margin-top:8px; }
+  .estimate-header { background:var(--dark); color:white; padding:12px 16px; font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; }
+  .estimate-body { padding:6px 16px; }
+  .estimate-item-group { padding:10px 0; border-bottom:1px solid var(--border); }
+  .estimate-item-group:last-child { border-bottom:none; }
+  .estimate-item-group .eig-title { font-size:12.5px; font-weight:700; color:var(--ink); margin-bottom:6px; font-family:'Plus Jakarta Sans',sans-serif; }
+  .recap-card { display:flex; gap:12px; padding:12px; border:1.5px solid var(--border); border-radius:10px; margin-bottom:10px; }
+  .recap-card:last-child { margin-bottom:0; }
+  .recap-thumb { flex:0 0 56px; width:56px; height:56px; border-radius:8px; object-fit:cover; background:var(--bg); border:1px solid var(--border); }
+  .recap-thumb-placeholder { flex:0 0 56px; width:56px; height:56px; border-radius:8px; background:var(--bg); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .recap-body { flex:1; min-width:0; }
+  .recap-name { font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:13.5px; margin-bottom:3px; }
+  .recap-meta { font-size:11.5px; color:var(--muted); line-height:1.6; }
+  .recap-meta a { color:var(--blue); text-decoration:none; }
+  .recap-meta a:hover { text-decoration:underline; }
+  .estimate-row { display:flex; justify-content:space-between; padding:4px 0; font-size:12.5px; }
+  .estimate-row .el { color:var(--muted); }
+  .estimate-row .ev { font-family:'DM Mono',monospace; font-weight:600; color:var(--ink); }
+  .estimate-total { background:var(--lime); color:white; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
+  .estimate-total .tl { font-size:11px; letter-spacing:0.5px; text-transform:uppercase; opacity:0.85; }
+  .estimate-total .tv { font-family:'DM Mono',monospace; font-size:20px; font-weight:700; }
+  .estimate-empty { text-align:center; color:var(--muted); font-size:13px; padding:20px; }
+  .estimate-disclaimer { background:#FFF3EE; border-left:3px solid var(--gold); padding:10px 14px; font-size:12px; color:var(--ink); line-height:1.6; margin-top:10px; border-radius:0 4px 4px 0; }
+
+  .btn-primary {
+    width:100%; background:var(--lime); color:white; border:none; border-radius:10px;
+    padding:15px; font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:700;
+    cursor:pointer; transition:background 0.15s; letter-spacing:0.2px;
+  }
+  .btn-primary:hover { background:#729f03; }
+  .btn-primary:disabled { background:#e5e2da; color:#a8a29a; cursor:not-allowed; }
+
+  .error-msg { background:#FDECEA; border-left:3px solid var(--red); color:#8a2a1f; padding:10px 14px; font-size:13px; border-radius:0 4px 4px 0; margin-bottom:14px; display:none; }
+  .error-msg.show { display:block; }
+
+  /* CONFIRMATION SCREEN */
+  .confirm-wrap { display:none; }
+  .confirm-wrap.show { display:block; }
+  .form-wrap.hide { display:none; }
+
+  .confirm-hero { background:var(--lime); color:white; text-align:center; padding:36px 24px; }
+  .confirm-hero .ch-icon { font-size:40px; margin-bottom:10px; }
+  .confirm-hero h2 { font-family:'Plus Jakarta Sans',sans-serif; font-size:22px; font-weight:800; margin-bottom:6px; }
+  .confirm-hero .order-id { font-family:'DM Mono',monospace; font-size:16px; background:rgba(255,255,255,0.2); display:inline-block; padding:6px 16px; border-radius:6px; margin-top:8px; letter-spacing:0.5px; }
+
+  .payment-card { background:white; border:1.5px solid var(--border); border-radius:10px; padding:16px; margin-bottom:12px; }
+  .payment-card .pc-label { font-size:10.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .payment-card .pc-bank { font-family:'Plus Jakarta Sans',sans-serif; font-size:16px; font-weight:700; color:var(--ink); }
+  .payment-card .pc-number { font-family:'DM Mono',monospace; font-size:18px; font-weight:600; color:var(--blue); margin-top:4px; letter-spacing:0.5px; }
+  .payment-card .pc-holder { font-size:12.5px; color:var(--muted); margin-top:4px; }
+
+  .wa-note { background:#F0F7FF; border:1px solid #C8DEFF; border-radius:8px; padding:14px 16px; font-size:13px; color:#2A4A7A; line-height:1.6; margin-top:16px; }
+  .wa-note b { color:#1A2A4A; }
+  .payment-scope-note { background:#FFF3EE; border-left:3px solid var(--gold); padding:12px 14px; font-size:12.5px; color:var(--ink); line-height:1.6; border-radius:0 6px 6px 0; margin-bottom:16px; }
+  .payment-scope-note b { color:var(--orange); }
+
+  .footer { background:var(--blue); color:rgba(255,255,255,0.7); padding:20px 24px; font-size:11.5px; text-align:center; }
+  .footer strong { color:white; font-family:'Plus Jakarta Sans',sans-serif; }
+  .footer a { color:rgba(255,255,255,0.8); }
+
+  .ref-link-bar { background:transparent; padding:18px 20px 4px; text-align:center; }
+  .ref-link-btn {
+    display:inline-block; color:var(--orange); font-family:'Plus Jakarta Sans',sans-serif;
+    font-size:13.5px; font-weight:700; text-decoration:underline; letter-spacing:0.2px;
+  }
+  .ref-link-btn:hover { color:#b53f13; }
+
+  @media (max-width:600px) {
+    .header .inner { padding:24px 20px 22px; }
+    .header h1 { font-size:20px; }
+    .section { padding:20px 16px; }
+    .input-row.three, .input-row.two { grid-template-columns:1fr 1fr; }
+    .item-card { padding:14px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="inner">
+      <img src="https://raw.githubusercontent.com/alfaankh/ImageAssets/1a67a9e04e136f32a168beef5c3b2df731c1e1fa/Anak%20Tengah%20Horizontal%20Title.png" alt="Anak Tengah">
+      <div class="header-tag">Form Pesanan</div>
+      <h1>Titip Barang dari China</h1>
+      <p>Isi detail pesanan kamu di bawah. Bisa tambah lebih dari satu barang, tipe boleh dicampur. Estimasi harga langsung muncul, final dikonfirmasi setelah barang kami terima.</p>
+    </div>
+  </div>
+
+  <div class="inner">
+
+    <!-- ═══════════ FORM ═══════════ -->
+    <div class="form-wrap" id="formWrap">
+
+      <div class="section">
+        <div class="section-label"><div class="section-num">1</div><div class="section-title">Data Diri</div></div>
+        <div class="input-row two">
+          <div class="input-group">
+            <label>Nama <span class="req">*</span></label>
+            <input type="text" id="f-name" placeholder="Nama lengkap" required>
+          </div>
+          <div class="input-group">
+            <label>No. WhatsApp <span class="req">*</span></label>
+            <input type="text" id="f-whatsapp" placeholder="08xxxxxxxxxx" required inputmode="tel">
+          </div>
+        </div>
+        <div class="input-group" style="margin-bottom:14px;">
+          <label>Alamat Lengkap <span class="req">*</span></label>
+          <textarea id="f-address" placeholder="Jl. Contoh No. 123, RT/RW, Kelurahan, Kecamatan (untuk label pengiriman nanti)" required></textarea>
+        </div>
+        <div class="input-row three">
+          <div class="input-group">
+            <label>Kota <span class="req">*</span></label>
+            <input type="text" id="f-city" placeholder="Jakarta Selatan" required>
+          </div>
+          <div class="input-group">
+            <label>Provinsi</label>
+            <input type="text" id="f-province" placeholder="DKI Jakarta">
+          </div>
+          <div class="input-group">
+            <label>Kode Pos</label>
+            <input type="text" id="f-postal" placeholder="12345" inputmode="numeric">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label"><div class="section-num">2</div><div class="section-title">Metode Pengiriman</div></div>
+        <div class="method-select-row" id="methodSelectRow">
+          <label class="method-card active" id="methodCard-sea">
+            <input type="radio" name="shippingMethod" value="sea" checked onchange="switchShippingMethod('sea')">
+            <div class="mc-icon">🚢</div>
+            <div class="mc-title">Sea Freight</div>
+            <div class="mc-sub">Dihitung per volume (CBM). Cocok untuk barang besar, tidak buru-buru.</div>
+            <div class="mc-unavailable">Tidak tersedia bulan ini</div>
+          </label>
+          <label class="method-card" id="methodCard-handcarry">
+            <input type="radio" name="shippingMethod" value="handcarry" onchange="switchShippingMethod('handcarry')">
+            <div class="mc-icon">✈️</div>
+            <div class="mc-title">Hand-Carry</div>
+            <div class="mc-sub">Dihitung per kg (berat atau ukuran, mana yang lebih besar). Lebih cepat.</div>
+            <div class="mc-unavailable">Tidak tersedia bulan ini</div>
+          </label>
+          <label class="method-card" id="methodCard-air">
+            <input type="radio" name="shippingMethod" value="air" onchange="switchShippingMethod('air')">
+            <div class="mc-icon">🛫</div>
+            <div class="mc-title">Air Cargo</div>
+            <div class="mc-sub">Dihitung per kg. Lebih cepat dari sea, biasanya lebih murah dari hand-carry untuk barang besar.</div>
+            <div class="mc-unavailable">Tidak tersedia bulan ini</div>
+          </label>
+        </div>
+        <div class="handcarry-explainer" id="weightMethodExplainer" style="display:none;"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label"><div class="section-num">3</div><div class="section-title">Detail Barang</div></div>
+        <div id="itemCardsWrap"><!-- item cards injected here --></div>
+        <button type="button" class="add-item-btn" onclick="addItem()">+ Tambah Barang</button>
+      </div>
+
+      <div class="section">
+        <div class="section-label"><div class="section-num">4</div><div class="section-title">Estimasi Biaya</div></div>
+        <div class="estimate-box">
+          <div class="estimate-header" id="estKurs">Memuat kurs...</div>
+          <div class="estimate-body">
+            <div id="estRows"><div class="estimate-empty">Isi detail barang di atas untuk lihat estimasi 👆</div></div>
+          </div>
+          <div class="estimate-total" id="estTotalBox" style="display:none;">
+            <span class="tl">Estimasi Total</span>
+            <span class="tv" id="estTotal">Rp 0</span>
+          </div>
+        </div>
+        <div class="estimate-disclaimer">
+          ⏳ <strong>Estimasi</strong> — harga final akan dikonfirmasi setelah barang tiba di China dan ditimbang/diukur ulang. Belum termasuk ongkir Taobao lokal &amp; JNE dari Jakarta ke kamu.
+        </div>
+      </div>
+
+      <div class="section" style="border-bottom:none;">
+        <div class="error-msg" id="errorMsg"></div>
+        <button class="btn-primary" id="submitBtn" onclick="submitOrder()">Kirim Pesanan</button>
+      </div>
+
+      <div class="ref-link-bar">
+        <a href="reference.html" class="ref-link-btn">📖 Belum yakin harganya? Cek Cara Hitung Biaya Lengkap</a>
+      </div>
+
+    </div>
+
+    <!-- ═══════════ CONFIRMATION ═══════════ -->
+    <div class="confirm-wrap" id="confirmWrap">
+      <div class="confirm-hero">
+        <div class="ch-icon">✅</div>
+        <h2>Pesanan Diterima!</h2>
+        <div>Simpan kode ini untuk referensi</div>
+        <div class="order-id" id="confirmOrderId">AT-2026-000</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label"><div class="section-num">1</div><div class="section-title">Detail Barang yang Dipesan</div></div>
+        <div id="confirmItemsRecap"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label"><div class="section-num">2</div><div class="section-title">Lakukan Pembayaran</div></div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Transfer <b>sejumlah total di bawah</b> ke salah satu rekening, lalu kirim bukti transfer via WhatsApp.</p>
+
+        <div class="estimate-box" style="margin-bottom:14px;">
+          <div class="estimate-header">Rincian yang kamu bayar sekarang</div>
+          <div class="estimate-body" id="confirmEstRows"></div>
+          <div class="estimate-total">
+            <span class="tl">Transfer Sejumlah</span>
+            <span class="tv" id="confirmEstTotal">Rp 0</span>
+          </div>
+        </div>
+
+        <div class="payment-scope-note">
+          💡 <b>Pembayaran ini mencakup rincian di atas</b> (harga barang + estimasi kirim). <b>Belum termasuk:</b> ongkir lokal Taobao/China (jika ada) dan ongkir Jakarta ke alamat kamu — selisih ukuran aktual &amp; biaya tersebut akan ditagihkan lewat <b>invoice sisa pembayaran</b> setelah barang kami terima dan ukur ulang.
+        </div>
+        <div id="paymentMethodsList"></div>
+      </div>
+
+      <div class="section" style="border-bottom:none;">
+        <div class="wa-note">
+          📱 <b>Langkah selanjutnya:</b> Kirim bukti transfer ke WhatsApp kami dengan menyebutkan kode pesanan <b id="confirmOrderIdInline">AT-2026-000</b>. Kami akan konfirmasi begitu pembayaran diterima.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <strong>Anak Tengah</strong> · Jastip China → Indonesia
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // SUPABASE CONNECTION
+  // ============================================================
+  const SUPABASE_URL = 'https://somdevhztgbsjkgqwman.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_WCgYHl38IazRNDVAW-cqkw_5HOeUec7';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let CFG = {
+    rate_floor: 2600, rate_spread: 0.03,
+    sea_rate_dimension: 8500000, service_fee_rate_dimension: 0.10, service_fee_min_dimension: 50000,
+    packing_fee_small: 15000, packing_fee_medium: 30000, packing_fee_large: 50000, packing_fee_xl: 85000,
+    packing_tier_small_max_cbm: 0.010, packing_tier_medium_max_cbm: 0.050, packing_tier_large_max_cbm: 0.150,
+    sea_rate_garment: 10500000, garment_packing_buffer: 0.10,
+    service_fee_rate_garment: 0.10, service_fee_min_garment: 30000, garment_min_service_threshold: 300000,
+  };
+  let GARMENT_CATS = [];
+  let CNY_TO_IDR = 2678;
+  let uploadedScreenshotFiles = {}; // itemId -> File
+
+  // ── ITEM CART STATE ──
+  // Each item: { id, type: 'regular'|'garment', ...fields, estimate: {...} }
+  let items = [];
+  let itemIdCounter = 0;
+  let shippingMethod = 'sea'; // 'sea' | 'handcarry' — whole-order choice
+
+  async function loadConfig() {
+    try {
+      const { data: pricing } = await sb.from('pricing_config').select('key, value');
+      if (pricing) pricing.forEach(row => { CFG[row.key] = parseFloat(row.value); });
+
+      const { data: garments } = await sb.from('garment_categories')
+        .select('id, label, panjang_cm, lebar_cm, tebal_cm')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (garments) GARMENT_CATS = garments.map(g => ({ id: g.id, label: g.label, p: g.panjang_cm, l: g.lebar_cm, t: g.tebal_cm }));
+    } catch(e) {
+      console.warn('Using fallback pricing config', e);
+    }
+    applyMethodAvailability();
+    // seed with one empty item once config is ready
+    addItem();
+  }
+
+  // Grays out and disables any shipping method the admin has turned off in
+  // Settings (e.g. "Air Cargo tidak tersedia bulan ini"). If the
+  // currently-selected method becomes unavailable, auto-switches to the
+  // first one that still is.
+  function applyMethodAvailability() {
+    const avail = {
+      sea: CFG.sea_available !== 0,
+      handcarry: CFG.handcarry_available !== 0,
+      air: CFG.air_available !== 0,
+    };
+    ['sea','handcarry','air'].forEach(m => {
+      const card = document.getElementById('methodCard-' + m);
+      if (!card) return;
+      const input = card.querySelector('input');
+      const isAvail = avail[m];
+      card.classList.toggle('unavailable', !isAvail);
+      if (input) input.disabled = !isAvail;
+    });
+    if (!avail[shippingMethod]) {
+      const fallback = ['sea','handcarry','air'].find(m => avail[m]);
+      if (fallback) {
+        document.querySelector(`#methodCard-${fallback} input`).checked = true;
+        switchShippingMethod(fallback);
+      }
+    }
+  }
+
+  async function loadPaymentMethods() {
+    try {
+      const { data } = await sb.from('payment_methods').select('*').eq('is_active', true).order('sort_order');
+      const list = document.getElementById('paymentMethodsList');
+      if (!data || data.length === 0) {
+        list.innerHTML = '<p style="font-size:13px;color:var(--muted);">Metode pembayaran belum tersedia, hubungi kami via WhatsApp.</p>';
+        return;
+      }
+      list.innerHTML = data.map(pm => {
+        if (pm.type === 'bank_transfer') {
+          return `<div class="payment-card">
+            <div class="pc-label">${pm.label}</div>
+            <div class="pc-number">${pm.account_number || '-'}</div>
+            <div class="pc-holder">a.n. ${pm.account_holder || '-'}</div>
+          </div>`;
+        } else {
+          return `<div class="payment-card">
+            <div class="pc-label">${pm.label} (QRIS)</div>
+            ${pm.qris_image_url ? `<img src="${pm.qris_image_url}" style="max-width:180px;margin-top:8px;border-radius:8px;">` : '<div style="font-size:12px;color:var(--muted);">QRIS belum diupload</div>'}
+          </div>`;
+        }
+      }).join('');
+    } catch(e) {
+      console.warn('Could not load payment methods', e);
+    }
+  }
+
+  function applyRate(liveRate) {
+    const base = Math.max(liveRate, CFG.rate_floor);
+    CNY_TO_IDR = Math.round(base * (1 + CFG.rate_spread));
+  }
+
+  async function fetchKurs() {
+    const el = document.getElementById('estKurs');
+    try {
+      const res = await fetch('https://api.frankfurter.app/latest?from=CNY&to=IDR');
+      const data = await res.json();
+      if (data?.rates?.IDR) {
+        applyRate(data.rates.IDR);
+        el.textContent = `Kurs: 1 CNY = Rp ${CNY_TO_IDR.toLocaleString('id-ID')} · Live`;
+        recalcAll();
+        return;
+      }
+    } catch(e) {}
+    applyRate(CFG.rate_floor);
+    el.textContent = `Kurs: 1 CNY = Rp ${CNY_TO_IDR.toLocaleString('id-ID')} (offline)`;
+    recalcAll();
+  }
+
+  function fmt(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
+  function parseFormatted(str) { return parseFloat(String(str).replace(/\./g, '').replace(',', '.')) || 0; }
+  function formatThousands(num, decimals = 0) {
+    if (!num && num !== 0) return '';
+    return decimals > 0
+      ? num.toLocaleString('id-ID', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+      : Math.round(num).toLocaleString('id-ID');
+  }
+
+  function getPackingFee(cbm) {
+    if (cbm < CFG.packing_tier_small_max_cbm) return { fee:CFG.packing_fee_small, tier:'Small' };
+    if (cbm < CFG.packing_tier_medium_max_cbm) return { fee:CFG.packing_fee_medium, tier:'Medium' };
+    if (cbm < CFG.packing_tier_large_max_cbm) return { fee:CFG.packing_fee_large, tier:'Large' };
+    return { fee:CFG.packing_fee_xl, tier:'XL' };
+  }
+  function getServiceFee(price) { return Math.max(price * CFG.service_fee_rate_dimension, CFG.service_fee_min_dimension); }
+
+  // ============================================================
+  // ITEM CART MANAGEMENT
+  // ============================================================
+  const WEIGHT_METHOD_EXPLAINERS = {
+    handcarry: '✈️ <strong>Hand-carry</strong> dihitung per kg — dari berat aktual barang ATAU ukurannya (mana yang lebih besar), supaya barang besar-tapi-ringan tetap adil. Harga di bawah adalah <strong>estimasi</strong>; harga final tergantung trip &amp; berat aktual saat barang kami terima.',
+    air: '🛫 <strong>Air Cargo</strong> dihitung per kg — dari berat aktual barang ATAU ukurannya (mana yang lebih besar), supaya barang besar-tapi-ringan tetap adil. Harga di bawah adalah <strong>estimasi</strong>; harga final tergantung shipment &amp; berat aktual saat barang kami terima.',
+  };
+
+  function switchShippingMethod(method) {
+    shippingMethod = method;
+    document.getElementById('methodCard-sea').classList.toggle('active', method === 'sea');
+    document.getElementById('methodCard-handcarry').classList.toggle('active', method === 'handcarry');
+    document.getElementById('methodCard-air').classList.toggle('active', method === 'air');
+    const explainerEl = document.getElementById('weightMethodExplainer');
+    const explainerText = WEIGHT_METHOD_EXPLAINERS[method];
+    explainerEl.style.display = explainerText ? 'block' : 'none';
+    if (explainerText) explainerEl.innerHTML = explainerText;
+    renderItemCards(); // item cards show/hide the weight field depending on method
+    recalcAll();
+  }
+
+  function addItem() {
+    itemIdCounter++;
+    const id = itemIdCounter;
+    items.push({
+      id, type: 'regular',
+      nama: '', link: '', rmb: '', price: '', p: '', l: '', t: '', wt: '', qty: 1, notes: '',
+      g_catIdx: '', g_nama: '', g_rmb: '', g_qty: 1, g_wt: '', g_notes: '',
+      estimate: null,
+    });
+    renderItemCards();
+  }
+
+  function removeItem(id) {
+    items = items.filter(it => it.id !== id);
+    delete uploadedScreenshotFiles[id];
+    if (items.length === 0) addItem(); // always keep at least one item
+    else renderItemCards();
+  }
+
+  function getItem(id) { return items.find(it => it.id === id); }
+
+  function switchItemMode(id, mode) {
+    const it = getItem(id);
+    it.type = mode;
+    renderItemCards();
+  }
+
+  const HC_HINT_FIELDS = new Set(['p','l','t','wt','qty','g_qty','g_wt','g_catIdx']);
+  function updateItemField(id, field, value) {
+    const it = getItem(id);
+    it[field] = value;
+    recalcItem(id);
+    if ((shippingMethod === 'handcarry' || shippingMethod === 'air') && HC_HINT_FIELDS.has(field)) {
+      updateHcHint(id, it.type === 'garment');
+    }
+  }
+
+  function syncItemCurrency(id, src) {
+    const it = getItem(id);
+    if (src === 'rmb') {
+      const raw = parseFormatted(document.getElementById(`r-rmb-${id}`).value);
+      it.rmb = document.getElementById(`r-rmb-${id}`).value;
+      it.price = raw > 0 ? formatThousands(raw * CNY_TO_IDR) : '';
+      document.getElementById(`r-price-${id}`).value = it.price;
+    } else {
+      const raw = parseFormatted(document.getElementById(`r-price-${id}`).value);
+      it.price = document.getElementById(`r-price-${id}`).value;
+      it.rmb = raw > 0 ? formatThousands(raw / CNY_TO_IDR, 1) : '';
+      document.getElementById(`r-rmb-${id}`).value = it.rmb;
+    }
+    recalcItem(id);
+  }
+
+  function handleFileSelect(id, event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    uploadedScreenshotFiles[id] = file;
+    const preview = document.getElementById(`filePreview-${id}`);
+    const reader = new FileReader();
+    reader.onload = ev => { preview.innerHTML = `<img src="${ev.target.result}" alt="preview">`; };
+    reader.readAsDataURL(file);
+  }
+
+  // Chargeable kg for hand-carry: max(estimated weight, volumetric weight),
+  // rounded up to the next whole kg. Mirrors the dashboard's chargeableKg()
+  // so the order-time estimate and the final processed number use the same
+  // logic — only the rate differs (global estimate rate vs. real trip rate).
+  function isWeightMethod() { return shippingMethod === 'handcarry' || shippingMethod === 'air'; }
+  function weightMethodDivisor(method) {
+    return method === 'air' ? (CFG.air_volumetric_divisor || 6000) : (CFG.handcarry_volumetric_divisor || 6000);
+  }
+  function weightMethodEstimateRate(method) {
+    return method === 'air' ? (CFG.air_estimate_rate_per_kg || 0) : (CFG.handcarry_estimate_rate_per_kg || 0);
+  }
+  function handcarryChargeableKg(p, l, t, qty, weightKg, method) {
+    const divisor = weightMethodDivisor(method || shippingMethod);
+    const vol = (p && l && t) ? (p * l * t / divisor) * qty : 0;
+    const actual = (parseFloat(weightKg) || 0) * qty;
+    const chargeable = Math.max(vol, actual);
+    return chargeable > 0 ? Math.ceil(chargeable) : 0;
+  }
+
+  // Human-readable breakdown of WHY the chargeable kg is what it is — shown
+  // live under the weight field so a jump like 1.5kg → 3kg is never a mystery.
+  function handcarryWeightHint(p, l, t, qty, weightKg, method) {
+    p = parseFloat(p) || 0; l = parseFloat(l) || 0; t = parseFloat(t) || 0;
+    qty = parseInt(qty) || 1;
+    const w = parseFloat(weightKg) || 0;
+    if (!(p && l && t)) return '';
+    const divisor = weightMethodDivisor(method || shippingMethod);
+    const volCm3 = p * l * t * qty;
+    const volKg = volCm3 / divisor;
+    const actualKg = w * qty;
+    const chargeable = Math.max(volKg, actualKg);
+    const rounded = chargeable > 0 ? Math.ceil(chargeable) : 0;
+    const qtyLabel = qty > 1 ? ` (×${qty})` : '';
+
+    if (!w) {
+      return `📐 Ukuran${qtyLabel}: ${volCm3.toLocaleString('id-ID')} cm³ ÷ ${divisor} = <b>${volKg.toFixed(2)} kg volumetrik</b>. Isi berat aktual untuk bandingkan — sementara dipakai ${rounded} kg (dibulatkan ke atas).`;
+    }
+    if (volKg > actualKg) {
+      return `📐 Ukuran${qtyLabel} ${volCm3.toLocaleString('id-ID')} cm³ = <b>${volKg.toFixed(2)} kg volumetrik</b>, lebih besar dari berat aktual ${actualKg.toFixed(1)} kg. Barang cukup besar untuk ukurannya, jadi dihitung dari volumenya: dibulatkan ke <b>${rounded} kg</b>.`;
+    }
+    return `⚖️ Berat aktual ${actualKg.toFixed(1)} kg lebih besar dari volumetrik (${volKg.toFixed(2)} kg), jadi dihitung dari beratnya: dibulatkan ke <b>${rounded} kg</b>.`;
+  }
+
+  function updateHcHint(id, isGarment) {
+    const it = getItem(id);
+    const hintEl = document.getElementById(isGarment ? `hcHintG-${id}` : `hcHint-${id}`);
+    if (!hintEl) return;
+    const hint = isGarment
+      ? handcarryWeightHint(getGarmentCatDims(it.g_catIdx).p, getGarmentCatDims(it.g_catIdx).l, getGarmentCatDims(it.g_catIdx).t, it.g_qty, it.g_wt)
+      : handcarryWeightHint(it.p, it.l, it.t, it.qty, it.wt);
+    hintEl.innerHTML = hint;
+    hintEl.style.display = hint ? 'block' : 'none';
+  }
+
+  function getGarmentCatDims(catIdx) {
+    const cat = GARMENT_CATS[parseInt(catIdx)];
+    return cat ? { p: cat.p, l: cat.l, t: cat.t } : { p: 0, l: 0, t: 0 };
+  }
+
+  function calcOneItem(it) {
+    if (it.type === 'regular') {
+      const qty = parseInt(it.qty) || 1;
+      const unitPrice = parseFormatted(it.price) || 0;
+      const price = unitPrice * qty;
+      const p = parseFloat(it.p) || 0, l = parseFloat(it.l) || 0, t = parseFloat(it.t) || 0;
+      if (!price || !p || !l || !t) return null;
+
+      const cbm = (p * l * t * qty) / 1_000_000;
+      const serviceFee = getServiceFee(price);
+
+      if (shippingMethod === 'handcarry' || shippingMethod === 'air') {
+        const kg = handcarryChargeableKg(p, l, t, qty, it.wt);
+        if (kg <= 0) return null; // need weight or dims to estimate
+        const hcFee = kg * weightMethodEstimateRate(shippingMethod);
+        const total = price + hcFee + serviceFee;
+        return { mode:'regular', method:shippingMethod, label: it.nama || 'Barang', qty, price, kg, hcFee, serviceFee, total };
+      }
+
+      const seaFee = cbm * CFG.sea_rate_dimension;
+      const packing = getPackingFee(cbm);
+      const total = price + seaFee + serviceFee + packing.fee;
+      return { mode:'regular', method:'sea', label: it.nama || 'Barang', qty, price, cbm, seaFee, serviceFee, packingFee: packing.fee, packingTier: packing.tier, total };
+    } else {
+      if (it.g_catIdx === '' || GARMENT_CATS.length === 0) return null;
+      const cat = GARMENT_CATS[parseInt(it.g_catIdx)];
+      const rmb = parseFormatted(it.g_rmb) || 0;
+      const qty = parseInt(it.g_qty) || 1;
+      if (!rmb || !cat) return null;
+
+      const price = rmb * CNY_TO_IDR * qty;
+      const isMinService = price < CFG.garment_min_service_threshold;
+      const serviceFee = isMinService ? CFG.service_fee_min_garment : price * CFG.service_fee_rate_garment;
+
+      if (shippingMethod === 'handcarry' || shippingMethod === 'air') {
+        const kg = handcarryChargeableKg(cat.p, cat.l, cat.t, qty, it.g_wt);
+        if (kg <= 0) return null;
+        const hcFee = kg * weightMethodEstimateRate(shippingMethod);
+        const total = price + hcFee + serviceFee;
+        return { mode:'garment', method:shippingMethod, label: it.g_nama || cat.label, catLabel: cat.label, qty, price, kg, hcFee, serviceFee, isMinService, total, rmb };
+      }
+
+      const cbmPerPiece = (cat.p * cat.l * cat.t) / 1e6;
+      const cbmBuffered = cbmPerPiece * qty * (1 + CFG.garment_packing_buffer);
+      const seaFee = cbmBuffered * CFG.sea_rate_garment;
+      const total = price + seaFee + serviceFee;
+      return { mode:'garment', method:'sea', label: it.g_nama || cat.label, catLabel: cat.label, qty, price, cbm: cbmBuffered, seaFee, serviceFee, isMinService, total, rmb };
+    }
+  }
+
+  function recalcItem(id) {
+    const it = getItem(id);
+    it.estimate = calcOneItem(it);
+    updateItemSubtotalDisplay(id);
+    recalcAll();
+  }
+
+  // Full item recap for the confirmation screen — what was actually ordered
+  // (photo, name, link, dims/weight, notes), separate from the cost
+  // breakdown below it. Uses itemsPayload, which already has everything
+  // merged (screenshot URL resolved, dims/weight normalized per method).
+  function buildItemsRecapHtml(payload) {
+    return payload.map(item => {
+      const thumb = item.screenshot_url
+        ? `<img class="recap-thumb" src="${item.screenshot_url}" alt="">`
+        : `<div class="recap-thumb-placeholder">📦</div>`;
+      const isWeightBased = item.estimate_breakdown && (item.estimate_breakdown.method === 'handcarry' || item.estimate_breakdown.method === 'air');
+      const dims = (item.customer_est_length_cm && item.customer_est_width_cm && item.customer_est_height_cm)
+        ? `${item.customer_est_length_cm}×${item.customer_est_width_cm}×${item.customer_est_height_cm} cm` : null;
+      const metaParts = [];
+      if (item.quantity > 1) metaParts.push(`Jumlah: ${item.quantity}`);
+      if (dims) metaParts.push(dims);
+      if (isWeightBased && item.estimated_weight_kg) metaParts.push(`Berat: ${item.estimated_weight_kg} kg`);
+      if (item.product_link) metaParts.push(`<a href="${item.product_link}" target="_blank" rel="noopener">Lihat produk ↗</a>`);
+      if (item.notes) metaParts.push(item.notes);
+      return `<div class="recap-card">
+        ${thumb}
+        <div class="recap-body">
+          <div class="recap-name">${item.product_name}</div>
+          <div class="recap-meta">${metaParts.join(' · ')}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function buildEstimateGroupsHtml(ests) {
+    let html = '';
+    ests.forEach((est, idx) => {
+      if (est.mode === 'regular' && (est.method === 'handcarry' || est.method === 'air')) {
+        const rate = weightMethodEstimateRate(est.method);
+        const methodTag = est.method === 'air' ? '🛫 air cargo' : '✈️ hand-carry';
+        const ongkirLabel = est.method === 'air' ? 'Ongkir air cargo (estimasi)' : 'Ongkir hand-carry (estimasi)';
+        html += `<div class="estimate-item-group">
+          <div class="eig-title">${idx+1}. ${est.label} ${est.qty > 1 ? `(×${est.qty})` : ''} <span style="color:var(--muted);font-weight:400;">— ${methodTag}</span></div>
+          <div class="estimate-row"><span class="el">Harga barang</span><span class="ev">${fmt(est.price)}</span></div>
+          <div class="estimate-row"><span class="el">Berat ditagih</span><span class="ev">${est.kg} kg</span></div>
+          <div class="estimate-row"><span class="el">${ongkirLabel}</span><span class="ev">${est.kg} kg × ${fmt(rate)} = ${fmt(est.hcFee)}</span></div>
+          <div class="estimate-row"><span class="el">Service fee</span><span class="ev">${fmt(est.serviceFee)}</span></div>
+          <div class="estimate-row" style="font-weight:700;padding-top:6px;"><span class="el">Subtotal</span><span class="ev">${fmt(est.total)}</span></div>
+        </div>`;
+      } else if (est.mode === 'regular') {
+        html += `<div class="estimate-item-group">
+          <div class="eig-title">${idx+1}. ${est.label} ${est.qty > 1 ? `(×${est.qty})` : ''}</div>
+          <div class="estimate-row"><span class="el">Harga barang</span><span class="ev">${fmt(est.price)}</span></div>
+          <div class="estimate-row"><span class="el">Volume</span><span class="ev">${est.cbm.toFixed(4)} CBM</span></div>
+          <div class="estimate-row"><span class="el">Sea freight</span><span class="ev">${fmt(est.seaFee)}</span></div>
+          <div class="estimate-row"><span class="el">Service fee</span><span class="ev">${fmt(est.serviceFee)}</span></div>
+          <div class="estimate-row"><span class="el">Packing (${est.packingTier})</span><span class="ev">${fmt(est.packingFee)}</span></div>
+          <div class="estimate-row" style="font-weight:700;padding-top:6px;"><span class="el">Subtotal</span><span class="ev">${fmt(est.total)}</span></div>
+        </div>`;
+      } else if (est.method === 'handcarry' || est.method === 'air') {
+        const rate = weightMethodEstimateRate(est.method);
+        const methodTag = est.method === 'air' ? '🛫 air cargo' : '✈️ hand-carry';
+        const ongkirLabel = est.method === 'air' ? 'Ongkir air cargo (estimasi)' : 'Ongkir hand-carry (estimasi)';
+        html += `<div class="estimate-item-group">
+          <div class="eig-title">${idx+1}. ${est.label} ${est.qty > 1 ? `(×${est.qty})` : ''} <span style="color:var(--muted);font-weight:400;">— ${est.catLabel} · ${methodTag}</span></div>
+          <div class="estimate-row"><span class="el">Harga barang</span><span class="ev">${fmt(est.price)}</span></div>
+          <div class="estimate-row"><span class="el">Berat ditagih</span><span class="ev">${est.kg} kg</span></div>
+          <div class="estimate-row"><span class="el">${ongkirLabel}</span><span class="ev">${est.kg} kg × ${fmt(rate)} = ${fmt(est.hcFee)}</span></div>
+          <div class="estimate-row"><span class="el">Service fee (${est.isMinService ? 'minimum' : (CFG.service_fee_rate_garment*100)+'%'})</span><span class="ev">${fmt(est.serviceFee)}</span></div>
+          <div class="estimate-row" style="font-weight:700;padding-top:6px;"><span class="el">Subtotal</span><span class="ev">${fmt(est.total)}</span></div>
+        </div>`;
+      } else {
+        html += `<div class="estimate-item-group">
+          <div class="eig-title">${idx+1}. ${est.label} ${est.qty > 1 ? `(×${est.qty})` : ''} <span style="color:var(--muted);font-weight:400;">— ${est.catLabel}</span></div>
+          <div class="estimate-row"><span class="el">Harga barang</span><span class="ev">${fmt(est.price)}</span></div>
+          <div class="estimate-row"><span class="el">Volume</span><span class="ev">${est.cbm.toFixed(4)} CBM</span></div>
+          <div class="estimate-row"><span class="el">Sea freight garment</span><span class="ev">${fmt(est.seaFee)}</span></div>
+          <div class="estimate-row"><span class="el">Service fee (${est.isMinService ? 'minimum' : (CFG.service_fee_rate_garment*100)+'%'})</span><span class="ev">${fmt(est.serviceFee)}</span></div>
+          <div class="estimate-row" style="font-weight:700;padding-top:6px;"><span class="el">Subtotal</span><span class="ev">${fmt(est.total)}</span></div>
+        </div>`;
+      }
+    });
+    return html;
+  }
+
+  function recalcAll() {
+    let total = 0;
+    let anyEstimate = false;
+    const rowsEl = document.getElementById('estRows');
+    const totalBox = document.getElementById('estTotalBox');
+
+    const ests = [];
+    items.forEach(it => {
+      const est = calcOneItem(it);
+      it.estimate = est;
+      if (!est) return;
+      anyEstimate = true;
+      total += est.total;
+      ests.push(est);
+    });
+
+    if (!anyEstimate) {
+      rowsEl.innerHTML = '<div class="estimate-empty">Isi detail barang di atas untuk lihat estimasi 👆</div>';
+      totalBox.style.display = 'none';
+      return;
+    }
+
+    rowsEl.innerHTML = buildEstimateGroupsHtml(ests);
+    document.getElementById('estTotal').textContent = fmt(total);
+    totalBox.style.display = 'flex';
+  }
+
+  function updateItemSubtotalDisplay(id) {
+    const it = getItem(id);
+    const el = document.getElementById(`itemSubtotal-${id}`);
+    if (!el) return;
+    if (it.estimate) {
+      el.textContent = fmt(it.estimate.total);
+    } else {
+      el.textContent = '—';
+    }
+  }
+
+  function garmentCatOptions(selectedIdx) {
+    if (GARMENT_CATS.length === 0) return '<option value="">Memuat kategori...</option>';
+    const empty = `<option value="" ${selectedIdx === '' ? 'selected' : ''} disabled>— Pilih kategori —</option>`;
+    return empty + GARMENT_CATS.map((c,i) => `<option value="${i}" ${String(i)===String(selectedIdx)?'selected':''}>${c.label}</option>`).join('');
+  }
+
+  function renderItemCards() {
+    const wrap = document.getElementById('itemCardsWrap');
+    wrap.innerHTML = items.map((it, idx) => {
+      const removeBtnHtml = items.length > 1
+        ? `<button type="button" class="item-remove-btn" onclick="removeItem(${it.id})">✕ Hapus</button>`
+        : '';
+
+      const regularBlock = `
+        <div id="mode-regular-${it.id}" style="display:${it.type==='regular'?'block':'none'};">
+          <div class="input-row two">
+            <div class="input-group">
+              <label>Nama Barang <span class="req">*</span></label>
+              <input type="text" value="${it.nama}" placeholder="cth: RC Car Chassis" oninput="updateItemField(${it.id},'nama',this.value)">
+            </div>
+            <div class="input-group">
+              <label>Link Produk</label>
+              <input type="text" value="${it.link}" placeholder="https://..." oninput="updateItemField(${it.id},'link',this.value)">
+            </div>
+          </div>
+          <div class="input-row two">
+            <div class="input-group">
+              <label>Harga (¥ RMB)</label>
+              <input type="text" id="r-rmb-${it.id}" value="${it.rmb}" placeholder="cth: 150" oninput="syncItemCurrency(${it.id},'rmb')" inputmode="decimal">
+            </div>
+            <div class="input-group">
+              <label>Harga (Rp) <span class="req">*</span></label>
+              <input type="text" id="r-price-${it.id}" value="${it.price}" placeholder="cth: 400.000" oninput="syncItemCurrency(${it.id},'idr')" inputmode="decimal">
+            </div>
+          </div>
+          <div class="input-row three">
+            <div class="input-group">
+              <label>Panjang (cm) <span class="req">*</span></label>
+              <input type="number" value="${it.p}" placeholder="20" oninput="updateItemField(${it.id},'p',this.value)">
+            </div>
+            <div class="input-group">
+              <label>Lebar (cm) <span class="req">*</span></label>
+              <input type="number" value="${it.l}" placeholder="15" oninput="updateItemField(${it.id},'l',this.value)">
+            </div>
+            <div class="input-group">
+              <label>Tinggi (cm) <span class="req">*</span></label>
+              <input type="number" value="${it.t}" placeholder="10" oninput="updateItemField(${it.id},'t',this.value)">
+            </div>
+          </div>
+          <div class="input-row two" style="display:${isWeightMethod()?'flex':'none'};">
+            <div class="input-group">
+              <label>Berat Estimasi (kg) <span class="req">*</span></label>
+              <input type="number" step="0.1" value="${it.wt}" placeholder="cth: 1.2" oninput="updateItemField(${it.id},'wt',this.value)">
+            </div>
+            <div class="input-group">
+              <label>Jumlah</label>
+              <input type="number" value="${it.qty}" min="1" oninput="updateItemField(${it.id},'qty',this.value)">
+            </div>
+          </div>
+          <div class="hc-weight-hint" id="hcHint-${it.id}" style="display:none;"></div>
+          <div class="input-row two" style="display:${isWeightMethod()?'none':'flex'};">
+            <div class="input-group">
+              <label>Jumlah</label>
+              <input type="number" value="${it.qty}" min="1" oninput="updateItemField(${it.id},'qty',this.value)">
+            </div>
+          </div>
+          <div class="input-group" style="margin-bottom:0;">
+            <label>Catatan (opsional)</label>
+            <textarea oninput="updateItemField(${it.id},'notes',this.value)" placeholder="cth: size M, warna hitam">${it.notes}</textarea>
+          </div>
+        </div>`;
+
+      const garmentBlock = `
+        <div id="mode-garment-${it.id}" style="display:${it.type==='garment'?'block':'none'};">
+          <div class="input-row two">
+            <div class="input-group">
+              <label>Kategori <span class="req">*</span></label>
+              <select onchange="updateItemField(${it.id},'g_catIdx',this.value)">${garmentCatOptions(it.g_catIdx)}</select>
+            </div>
+            <div class="input-group">
+              <label>Nama Barang</label>
+              <input type="text" value="${it.g_nama}" placeholder="cth: Kaos hitam" oninput="updateItemField(${it.id},'g_nama',this.value)">
+            </div>
+          </div>
+          <div class="input-row two">
+            <div class="input-group">
+              <label>Harga (¥ RMB) <span class="req">*</span></label>
+              <input type="text" value="${it.g_rmb}" placeholder="cth: 80" oninput="updateItemField(${it.id},'g_rmb',this.value)" inputmode="decimal">
+            </div>
+            <div class="input-group">
+              <label>Jumlah</label>
+              <input type="number" value="${it.g_qty}" min="1" oninput="updateItemField(${it.id},'g_qty',this.value)">
+            </div>
+          </div>
+          <div class="input-row two" style="display:${isWeightMethod()?'flex':'none'};">
+            <div class="input-group">
+              <label>Berat Estimasi (kg) <span class="req">*</span></label>
+              <input type="number" step="0.1" value="${it.g_wt}" placeholder="cth: 0.5" oninput="updateItemField(${it.id},'g_wt',this.value)">
+            </div>
+          </div>
+          <div class="hc-weight-hint" id="hcHintG-${it.id}" style="display:none;"></div>
+          <div class="input-group" style="margin-bottom:0;">
+            <label>Catatan (opsional)</label>
+            <textarea oninput="updateItemField(${it.id},'g_notes',this.value)" placeholder="cth: size M, warna hitam">${it.g_notes}</textarea>
+          </div>
+        </div>`;
+
+      return `
+        <div class="item-card">
+          <div class="item-card-header">
+            <div class="item-card-title">Barang ${idx+1}</div>
+            ${removeBtnHtml}
+          </div>
+          <div class="mode-tabs">
+            <button type="button" class="mode-tab ${it.type==='regular'?'active':''}" onclick="switchItemMode(${it.id},'regular')">📦 Regular Item</button>
+            <button type="button" class="mode-tab ${it.type==='garment'?'active':''}" onclick="switchItemMode(${it.id},'garment')">👕 Garment</button>
+          </div>
+          ${regularBlock}
+          ${garmentBlock}
+          <div class="input-group" style="margin-top:14px;margin-bottom:0;">
+            <label>Screenshot Barang (opsional)</label>
+            <div class="file-drop" onclick="document.getElementById('f-screenshot-${it.id}').click()">
+              <input type="file" id="f-screenshot-${it.id}" accept="image/*" onchange="handleFileSelect(${it.id}, event)">
+              <div class="fd-icon">📷</div>
+              <div class="fd-text">Tap untuk upload screenshot</div>
+            </div>
+            <div class="file-preview" id="filePreview-${it.id}"></div>
+          </div>
+          <div class="item-subtotal-bar">
+            <span class="isb-label">Subtotal barang ini</span>
+            <span class="isb-value" id="itemSubtotal-${it.id}">—</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    recalcAll();
+    items.forEach(it => updateItemSubtotalDisplay(it.id));
+    if (isWeightMethod()) items.forEach(it => updateHcHint(it.id, it.type === 'garment'));
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.add('show');
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+  function clearError() { document.getElementById('errorMsg').classList.remove('show'); }
+
+  async function submitOrder() {
+    clearError();
+    const name = document.getElementById('f-name').value.trim();
+    const whatsapp = document.getElementById('f-whatsapp').value.trim();
+    const address = document.getElementById('f-address').value.trim();
+    const city = document.getElementById('f-city').value.trim();
+    const province = document.getElementById('f-province').value.trim();
+    const postal = document.getElementById('f-postal').value.trim();
+
+    if (!name || !whatsapp || !address || !city) {
+      showError('Mohon lengkapi Nama, WhatsApp, Alamat, dan Kota.');
+      return;
+    }
+
+    const validItems = items.map(it => ({ it, est: calcOneItem(it) })).filter(x => x.est);
+    if (validItems.length === 0) {
+      showError('Mohon lengkapi detail minimal satu barang untuk melihat estimasi.');
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Mengirim...';
+
+    try {
+      const grandTotal = validItems.reduce((sum, x) => sum + x.est.total, 0);
+
+      // 1. Find-or-create customer by WhatsApp — now handled server-side by
+      // upsert_customer_by_whatsapp (SECURITY DEFINER), so this page never
+      // needs direct read/write access to the customers table.
+      const { data: customerData, error: custErr } = await sb.rpc('upsert_customer_by_whatsapp', {
+        p_name: name, p_whatsapp: whatsapp, p_address: address, p_city: city,
+        p_province: province || null, p_postal: postal || null,
+      });
+      if (custErr) throw custErr;
+
+      // 2. Create the order via RPC — snapshot the kurs actually used so later
+      // recalculation reproduces the exact same conversion.
+      const { data: orderData, error: orderErr } = await sb.rpc('create_order', {
+        p_customer_id: customerData.id,
+        p_total_amount_idr: Math.round(grandTotal),
+        p_kurs_used: CNY_TO_IDR,
+        p_shipping_method: shippingMethod,
+      });
+      if (orderErr) throw orderErr;
+
+      // 3. Upload screenshots and build the items payload, then write them
+      // all in one call via add_order_items (see below).
+      const itemsPayload = [];
+      for (const { it, est } of validItems) {
+        let screenshotUrl = null;
+        const file = uploadedScreenshotFiles[it.id];
+        if (file) {
+          const fileExt = file.name.split('.').pop();
+          const filePath = `${orderData.id}/${it.id}-${Date.now()}.${fileExt}`;
+          const { error: uploadErr } = await sb.storage.from('order-screenshots').upload(filePath, file);
+          if (!uploadErr) {
+            const { data: urlData } = sb.storage.from('order-screenshots').getPublicUrl(filePath);
+            screenshotUrl = urlData.publicUrl;
+          }
+        }
+
+        let productName, productLink, estimatedPriceCny, notes, estL, estW, estH, itemType, garmentCatId, estWeightKg;
+        if (est.mode === 'regular') {
+          productName = it.nama.trim() || 'Barang tanpa nama';
+          productLink = it.link.trim() || null;
+          estimatedPriceCny = parseFormatted(it.rmb) || null;
+          notes = it.notes.trim() || null;
+          estL = parseFloat(it.p) || null;
+          estW = parseFloat(it.l) || null;
+          estH = parseFloat(it.t) || null;
+          itemType = 'regular';
+          garmentCatId = null;
+          estWeightKg = parseFloat(it.wt) || null;
+        } else {
+          productName = it.g_nama.trim() || est.catLabel;
+          productLink = null;
+          estimatedPriceCny = parseFormatted(it.g_rmb) || null;
+          notes = `Kategori: ${est.catLabel}. ${it.g_notes.trim()}`;
+          const cat = GARMENT_CATS[parseInt(it.g_catIdx)];
+          estL = cat ? cat.p : null;
+          estW = cat ? cat.l : null;
+          estH = cat ? cat.t : null;
+          itemType = 'garment';
+          garmentCatId = cat ? cat.id : null;
+          estWeightKg = parseFloat(it.g_wt) || null;
+        }
+
+        itemsPayload.push({
+          product_name: productName,
+          product_link: productLink,
+          screenshot_url: screenshotUrl,
+          quantity: est.qty,
+          estimated_price_cny: estimatedPriceCny,
+          notes,
+          customer_est_length_cm: estL,
+          customer_est_width_cm: estW,
+          customer_est_height_cm: estH,
+          item_type: itemType,
+          garment_category_id: garmentCatId,
+          estimated_weight_kg: estWeightKg,
+          estimate_breakdown: (est.method === 'handcarry' || est.method === 'air') ? {
+            mode: est.mode,
+            method: est.method,
+            price_idr: Math.round(est.price),
+            kg: est.kg,
+            hc_fee: Math.round(est.hcFee),
+            service_fee: Math.round(est.serviceFee),
+            total: Math.round(est.total),
+          } : {
+            mode: est.mode,
+            method: 'sea',
+            price_idr: Math.round(est.price),
+            cbm: est.cbm,
+            sea_fee: Math.round(est.seaFee),
+            service_fee: Math.round(est.serviceFee),
+            packing_fee: Math.round(est.packingFee || 0),
+            packing_tier: est.packingTier || null,
+            total: Math.round(est.total),
+          },
+        });
+      }
+
+      // All items written in ONE call — avoids N separate round trips and
+      // matches add_order_items' all-or-nothing ownership guard (only works
+      // on a freshly-submitted order it can verify belongs to this submission).
+      const { error: itemsErr } = await sb.rpc('add_order_items', {
+        p_order_id: orderData.id,
+        p_items: itemsPayload,
+      });
+      if (itemsErr) throw itemsErr;
+
+      // Success — show confirmation with full payment recap
+      document.getElementById('confirmOrderId').textContent = orderData.order_number;
+      document.getElementById('confirmOrderIdInline').textContent = orderData.order_number;
+      document.getElementById('confirmItemsRecap').innerHTML = buildItemsRecapHtml(itemsPayload);
+      document.getElementById('confirmEstRows').innerHTML = buildEstimateGroupsHtml(validItems.map(x => x.est));
+      document.getElementById('confirmEstTotal').textContent = fmt(grandTotal);
+      document.getElementById('formWrap').classList.add('hide');
+      document.getElementById('confirmWrap').classList.add('show');
+      loadPaymentMethods();
+      window.scrollTo({ top:0, behavior:'smooth' });
+
+    } catch (e) {
+      console.error(e);
+      showError('Gagal mengirim pesanan. Coba lagi atau hubungi kami via WhatsApp. (' + (e.message || 'unknown error') + ')');
+      btn.disabled = false;
+      btn.textContent = 'Kirim Pesanan';
+    }
+  }
+
+  // INIT
+  loadConfig().then(() => fetchKurs());
+</script>
+</body>
+</html>
