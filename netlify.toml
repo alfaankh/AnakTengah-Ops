@@ -1,11 +1,6 @@
 [[redirects]]
-  from = "/"
-  to = "/order.html"
-  status = 200
-
-[[redirects]]
   from = "/order"
-  to = "/order.html"
+  to = "/index.html"
   status = 200
 
 [[redirects]]
@@ -14,7 +9,7 @@
   status = 200
 
 [[redirects]]
-  from = "/dashboard"
+  from = "/admin"
   to = "/dashboard.html"
   status = 200
 
