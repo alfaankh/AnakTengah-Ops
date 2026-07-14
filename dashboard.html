@@ -2338,11 +2338,11 @@
           </div>
           ${!item.handcarry_trip_id ? `<div class="frm-hint">Belum di-assign ke trip manapun — buat/pilih trip di tab ✈️ Trip Hand-Carry. Sampai saat itu harga masih estimasi.</div>` : ''}
           <div class="frm-row">
-            <label class="frm-label">Berat aktual (kg)</label>
+            <label class="frm-label">Berat aktual (gram)</label>
             <div class="frm-control">
-              <input type="number" step="0.1" id="actualweight-${item.id}" value="${item.actual_weight_kg || ''}" placeholder="${item.estimated_weight_kg || '0'}">
+              <input type="number" step="1" min="0" id="actualweight-${item.id}" value="${item.actual_weight_kg != null ? Math.round(item.actual_weight_kg * 1000) : ''}" placeholder="${item.estimated_weight_kg != null ? Math.round(item.estimated_weight_kg * 1000) : '0'}">
             </div>
-            <div class="frm-hint">Estimasi customer: ${item.estimated_weight_kg || '—'} kg. Isi berat timbangan asli di sini, lalu 💾 Simpan Semua di bawah.</div>
+            <div class="frm-hint">Estimasi customer: ${item.estimated_weight_kg != null ? Math.round(item.estimated_weight_kg * 1000).toLocaleString('id-ID') : '—'} gram. Isi berat timbangan asli (gram) di sini, lalu 💾 Simpan Semua di bawah.</div>
           </div>
         </div>
         ` : o.shipping_method === 'air' ? `
@@ -2358,11 +2358,11 @@
           </div>
           ${!item.air_shipment_id ? `<div class="frm-hint">Belum di-assign ke shipment manapun — buat/pilih shipment di tab 🛫 Air Cargo. Sampai saat itu harga masih estimasi.</div>` : ''}
           <div class="frm-row">
-            <label class="frm-label">Berat aktual (kg)</label>
+            <label class="frm-label">Berat aktual (gram)</label>
             <div class="frm-control">
-              <input type="number" step="0.1" id="actualweight-${item.id}" value="${item.actual_weight_kg || ''}" placeholder="${item.estimated_weight_kg || '0'}">
+              <input type="number" step="1" min="0" id="actualweight-${item.id}" value="${item.actual_weight_kg != null ? Math.round(item.actual_weight_kg * 1000) : ''}" placeholder="${item.estimated_weight_kg != null ? Math.round(item.estimated_weight_kg * 1000) : '0'}">
             </div>
-            <div class="frm-hint">Estimasi customer: ${item.estimated_weight_kg || '—'} kg. Isi berat timbangan asli di sini, lalu 💾 Simpan Semua di bawah.</div>
+            <div class="frm-hint">Estimasi customer: ${item.estimated_weight_kg != null ? Math.round(item.estimated_weight_kg * 1000).toLocaleString('id-ID') : '—'} gram. Isi berat timbangan asli (gram) di sini, lalu 💾 Simpan Semua di bawah.</div>
           </div>
         </div>
         ` : `
@@ -2753,7 +2753,9 @@
       if (pkVal !== (item.actual_packing_cost_idr!=null?parseFloat(item.actual_packing_cost_idr):null)) { u.actual_packing_cost_idr = pkVal; costChanged = true; }
       const awEl = document.getElementById('actualweight-'+item.id);
       if (awEl) {
-        const awVal = parseFloat(awEl.value) || null;
+        // Field is entered in grams; actual_weight_kg column is kg — convert.
+        const awGrams = parseFloat(awEl.value) || null;
+        const awVal = awGrams != null ? awGrams / 1000 : null;
         if (awVal !== (item.actual_weight_kg!=null?parseFloat(item.actual_weight_kg):null)) { u.actual_weight_kg = awVal; costChanged = true; }
       }
       if (Object.keys(u).length) itemUpdates.push({ id: item.id, u });

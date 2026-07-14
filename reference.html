@@ -636,8 +636,8 @@
           </div>
           <div class="input-row two">
             <div class="input-group">
-              <label>Berat Aktual (kg)</label>
-              <input type="number" id="w-inp-wt" step="0.1" placeholder="cth: 1.2" oninput="calcWeightEstimate()">
+              <label>Berat Aktual (gram)</label>
+              <input type="number" id="w-inp-wt" step="1" min="0" placeholder="cth: 1200" oninput="calcWeightEstimate()">
             </div>
             <div class="input-group">
               <label>Jumlah</label>
@@ -659,8 +659,8 @@
           </div>
           <div class="input-row two">
             <div class="input-group">
-              <label>Berat Aktual (kg)</label>
-              <input type="number" id="w-g-wt" step="0.1" placeholder="cth: 0.5" oninput="calcWeightEstimate()">
+              <label>Berat Aktual (gram)</label>
+              <input type="number" id="w-g-wt" step="1" min="0" placeholder="cth: 500" oninput="calcWeightEstimate()">
             </div>
             <div class="input-group">
               <label>Jumlah</label>
@@ -1223,28 +1223,33 @@
   function weightRate(method) {
     return method === 'air' ? (CFG.air_estimate_rate_per_kg || 0) : (CFG.handcarry_estimate_rate_per_kg || 0);
   }
-  function weightChargeableKg(p, l, t, qty, weightKg, method) {
+  // weightGrams is the raw value typed into the "Berat" field — entered in
+  // grams for precision/convenience, converted to kg here for the volumetric
+  // comparison. The CHARGEABLE result is still rounded up to a whole kg,
+  // unchanged — only the raw input unit changed, not the billing unit.
+  function weightChargeableKg(p, l, t, qty, weightGrams, method) {
     const divisor = weightDivisor(method);
     const vol = (p && l && t) ? (p * l * t / divisor) * qty : 0;
-    const actual = (parseFloat(weightKg) || 0) * qty;
+    const actual = ((parseFloat(weightGrams) || 0) / 1000) * qty;
     const chargeable = Math.max(vol, actual);
     return chargeable > 0 ? Math.ceil(chargeable) : 0;
   }
-  function weightHintText(p, l, t, qty, weightKg, method) {
+  function weightHintText(p, l, t, qty, weightGrams, method) {
     p = parseFloat(p) || 0; l = parseFloat(l) || 0; t = parseFloat(t) || 0;
     qty = parseInt(qty) || 1;
-    const w = parseFloat(weightKg) || 0;
+    const g = parseFloat(weightGrams) || 0;
     if (!(p && l && t)) return '';
     const divisor = weightDivisor(method);
     const volCm3 = p * l * t * qty;
     const volKg = volCm3 / divisor;
-    const actualKg = w * qty;
+    const actualKg = (g / 1000) * qty;
+    const actualGramsTotal = g * qty;
     const chargeable = Math.max(volKg, actualKg);
     const rounded = chargeable > 0 ? Math.ceil(chargeable) : 0;
     const qtyLabel = qty > 1 ? ` (×${qty})` : '';
-    if (!w) return `📐 Ukuran${qtyLabel}: ${volCm3.toLocaleString('id-ID')} cm³ ÷ ${divisor} = <b>${volKg.toFixed(2)} kg volumetrik</b>. Isi berat aktual untuk bandingkan — sementara dipakai ${rounded} kg (dibulatkan ke atas).`;
-    if (volKg > actualKg) return `📐 Ukuran${qtyLabel} ${volCm3.toLocaleString('id-ID')} cm³ = <b>${volKg.toFixed(2)} kg volumetrik</b>, lebih besar dari berat aktual ${actualKg.toFixed(1)} kg. Dibulatkan ke <b>${rounded} kg</b>.`;
-    return `⚖️ Berat aktual ${actualKg.toFixed(1)} kg lebih besar dari volumetrik (${volKg.toFixed(2)} kg). Dibulatkan ke <b>${rounded} kg</b>.`;
+    if (!g) return `📐 Ukuran${qtyLabel}: ${volCm3.toLocaleString('id-ID')} cm³ ÷ ${divisor} = <b>${volKg.toFixed(2)} kg volumetrik</b>. Isi berat aktual (gram) untuk bandingkan — sementara dipakai ${rounded} kg (dibulatkan ke atas).`;
+    if (volKg > actualKg) return `📐 Ukuran${qtyLabel} ${volCm3.toLocaleString('id-ID')} cm³ = <b>${volKg.toFixed(2)} kg volumetrik</b>, lebih besar dari berat aktual ${actualGramsTotal.toLocaleString('id-ID')} gram. Dibulatkan ke <b>${rounded} kg</b>.`;
+    return `⚖️ Berat aktual ${actualGramsTotal.toLocaleString('id-ID')} gram lebih besar dari volumetrik (${volKg.toFixed(2)} kg). Dibulatkan ke <b>${rounded} kg</b>.`;
   }
 
   function switchWeightMethod(method) {
