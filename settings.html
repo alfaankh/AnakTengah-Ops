@@ -201,6 +201,18 @@
       <input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="••••" autofocus>
       <button class="pin-submit" onclick="checkPin()">Masuk</button>
       <div class="pin-error" id="pinError">PIN salah, coba lagi.</div>
+
+      <div id="pinForgotLink" onclick="toggleForgotPin()" style="margin-top:16px;font-size:12.5px;color:var(--blue);cursor:pointer;text-decoration:underline;">Lupa PIN?</div>
+      <div id="pinRecoveryBox" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);text-align:left;">
+        <label style="display:block;font-size:11px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Kode Recovery</label>
+        <input type="text" id="recoveryCodeInput" placeholder="XXXX-XXXX-XXXX-XXXX" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:13px;outline:none;margin-bottom:10px;box-sizing:border-box;">
+        <label style="display:block;font-size:11px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">PIN Baru (min. 4 digit)</label>
+        <input type="password" inputmode="numeric" maxlength="6" id="recoveryNewPinInput" placeholder="••••" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;outline:none;margin-bottom:10px;box-sizing:border-box;">
+        <label style="display:block;font-size:11px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Konfirmasi PIN Baru</label>
+        <input type="password" inputmode="numeric" maxlength="6" id="recoveryConfirmPinInput" placeholder="••••" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;outline:none;margin-bottom:12px;box-sizing:border-box;">
+        <button class="pin-submit" onclick="resetPinWithRecovery()" style="background:var(--gold);">Reset PIN</button>
+        <div class="pin-error" id="recoveryError"></div>
+      </div>
     </div>
   </div>
 
@@ -410,6 +422,24 @@
           <div class="pin-change-error" id="pinChangeError"></div>
           <button class="pin-change-btn" onclick="changePin()">Simpan PIN Baru</button>
         </div>
+
+        <div class="card" style="max-width:420px;">
+          <div class="card-title">Kode Recovery (Lupa PIN)</div>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+            Dipakai untuk reset PIN tanpa perlu tau PIN lama, lewat tombol "Lupa PIN?" di layar PIN. Simpan kode ini di file offline (bukan online) — lihat <code>RECOVERY-CODE.txt</code> di folder project.
+          </p>
+          <div class="pin-change-row">
+            <label class="pcr-label">PIN Saat Ini</label>
+            <input type="password" inputmode="numeric" maxlength="6" class="pcr-input" id="recoveryGenPinInput" placeholder="••••">
+          </div>
+          <div class="pin-change-error" id="recoveryGenError"></div>
+          <button class="pin-change-btn" onclick="regenerateRecoveryCode()">Buat Ulang Kode Recovery</button>
+          <div id="recoveryGenResult" style="display:none;margin-top:14px;padding:14px;background:#FFF3EE;border-left:3px solid var(--gold);border-radius:0 6px 6px 0;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:6px;">Kode Baru (tampil sekali saja)</div>
+            <div id="recoveryGenCode" style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;letter-spacing:1px;"></div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:8px;">Simpan kode ini sekarang ke file offline — setelah ditutup, tidak bisa dilihat lagi (database hanya menyimpan hash-nya).</div>
+          </div>
+        </div>
       </div>
 
         </div><!-- /settings-panel -->
@@ -470,6 +500,56 @@
     if (e.key === 'Enter') checkPin();
   });
 
+  // ============================================================
+  // FORGOT PIN (recovery code, offline-stored — see RECOVERY-CODE.txt)
+  // ============================================================
+  function toggleForgotPin() {
+    const box = document.getElementById('pinRecoveryBox');
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  }
+
+  async function resetPinWithRecovery() {
+    const code = document.getElementById('recoveryCodeInput').value.trim();
+    const newPin = document.getElementById('recoveryNewPinInput').value.trim();
+    const confirmPin = document.getElementById('recoveryConfirmPinInput').value.trim();
+    const errEl = document.getElementById('recoveryError');
+    errEl.textContent = '';
+    errEl.classList.remove('show');
+
+    if (!code || !newPin || !confirmPin) {
+      errEl.textContent = 'Semua kolom wajib diisi.';
+      errEl.classList.add('show');
+      return;
+    }
+    if (newPin.length < 4) {
+      errEl.textContent = 'PIN baru minimal 4 digit.';
+      errEl.classList.add('show');
+      return;
+    }
+    if (newPin !== confirmPin) {
+      errEl.textContent = 'Konfirmasi PIN baru tidak cocok.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    try {
+      const { data, error } = await sb.rpc('reset_admin_pin_with_recovery', { recovery_code: code, new_pin: newPin });
+      if (error) throw error;
+      if (data) { // non-empty secret = success
+        sessionStorage.setItem(SESSION_KEY, data);
+        initAdminClient(data);
+        showPanel();
+      } else {
+        errEl.textContent = 'Kode recovery salah.';
+        errEl.classList.add('show');
+      }
+    } catch (e) {
+      console.error(e);
+      errEl.textContent = e.message && e.message.includes('minimal') ? e.message : 'Gagal reset PIN, coba lagi.';
+      errEl.classList.add('show');
+    }
+  }
+
   function logout() {
     sessionStorage.removeItem(SESSION_KEY);
     location.reload();
@@ -515,6 +595,31 @@
     } catch (e) {
       console.error(e);
       errEl.textContent = e.message && e.message.includes('minimal') ? e.message : 'Gagal mengubah PIN, coba lagi.';
+    }
+  }
+
+  async function regenerateRecoveryCode() {
+    const pin = document.getElementById('recoveryGenPinInput').value.trim();
+    const errEl = document.getElementById('recoveryGenError');
+    const resultEl = document.getElementById('recoveryGenResult');
+    const codeEl = document.getElementById('recoveryGenCode');
+    errEl.textContent = '';
+    resultEl.style.display = 'none';
+    if (!pin) { errEl.textContent = 'Masukkan PIN saat ini.'; return; }
+    try {
+      const { data, error } = await sb.rpc('regenerate_recovery_code', { current_pin: pin });
+      if (error) throw error;
+      if (data) {
+        codeEl.textContent = data;
+        resultEl.style.display = 'block';
+        document.getElementById('recoveryGenPinInput').value = '';
+        showToast('Kode recovery baru dibuat. Simpan sekarang ke file offline.');
+      } else {
+        errEl.textContent = 'PIN saat ini salah.';
+      }
+    } catch (e) {
+      console.error(e);
+      errEl.textContent = 'Gagal membuat kode recovery, coba lagi.';
     }
   }
 

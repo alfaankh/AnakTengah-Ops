@@ -308,9 +308,10 @@
     </div>
   </div>
 
-  <div class="mode-tabs">
+  <div class="mode-tabs" style="max-width:420px;">
     <button class="mode-tab active" id="tab-regular" onclick="switchMode('regular')">📦 Regular Item</button>
     <button class="mode-tab" id="tab-garment" onclick="switchMode('garment')">👕 Garment</button>
+    <button class="mode-tab" id="tab-weight" onclick="switchMode('weight')">✈️ Hand-Carry/Air</button>
   </div>
 
   <div class="inner">
@@ -579,6 +580,188 @@
 
   </div><!-- end content-garment -->
 
+  <!-- HAND-CARRY / AIR CARGO -->
+  <div class="mode-content" id="content-weight">
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">1</div>
+      <div class="section-title">Kalkulator Estimasi Biaya</div>
+    </div>
+    <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:16px;">Dihitung per <strong>kg</strong> — dari berat aktual barang ATAU ukurannya (volumetrik), mana yang lebih besar, dibulatkan ke atas. Lebih cepat dari sea freight, tidak digabung batch.</p>
+
+    <div class="mode-tabs" style="max-width:320px;margin:0 0 12px;">
+      <button class="mode-tab active" id="wtab-handcarry" onclick="switchWeightMethod('handcarry')">✈️ Hand-Carry</button>
+      <button class="mode-tab" id="wtab-air" onclick="switchWeightMethod('air')">🛫 Air Cargo</button>
+    </div>
+    <div class="mode-tabs" style="max-width:320px;margin:0 0 16px;">
+      <button class="mode-tab active" id="witab-regular" onclick="switchWeightItemType('regular')">📦 Regular Item</button>
+      <button class="mode-tab" id="witab-garment" onclick="switchWeightItemType('garment')">👕 Garment</button>
+    </div>
+
+    <div class="calc-wrapper">
+      <div class="calc-header">
+        <span class="calc-icon" id="w-calc-icon">✈️</span>
+        <div>
+          <div class="calc-title" id="w-calc-title">Estimasi Biaya Hand-Carry</div>
+          <div class="calc-sub" id="kurs-label-weight">Memuat kurs...</div>
+        </div>
+      </div>
+      <div class="calc-body">
+
+        <div id="w-block-regular">
+          <div class="input-row two">
+            <div class="input-group">
+              <label>Harga Barang (¥ RMB)</label>
+              <input type="text" id="w-inp-rmb" placeholder="cth: 150" oninput="syncWeightCurrency('rmb')" inputmode="decimal">
+            </div>
+            <div class="input-group">
+              <label>Harga Barang (Rp)</label>
+              <input type="text" id="w-inp-price" placeholder="cth: 400.000" oninput="syncWeightCurrency('idr')" inputmode="decimal">
+            </div>
+          </div>
+          <div class="input-row three">
+            <div class="input-group">
+              <label>Panjang (cm)</label>
+              <input type="number" id="w-inp-p" placeholder="20" oninput="calcWeightEstimate()">
+            </div>
+            <div class="input-group">
+              <label>Lebar (cm)</label>
+              <input type="number" id="w-inp-l" placeholder="15" oninput="calcWeightEstimate()">
+            </div>
+            <div class="input-group">
+              <label>Tinggi (cm)</label>
+              <input type="number" id="w-inp-t" placeholder="10" oninput="calcWeightEstimate()">
+            </div>
+          </div>
+          <div class="input-row two">
+            <div class="input-group">
+              <label>Berat Aktual (kg)</label>
+              <input type="number" id="w-inp-wt" step="0.1" placeholder="cth: 1.2" oninput="calcWeightEstimate()">
+            </div>
+            <div class="input-group">
+              <label>Jumlah</label>
+              <input type="number" id="w-inp-qty" value="1" min="1" oninput="calcWeightEstimate()">
+            </div>
+          </div>
+        </div>
+
+        <div id="w-block-garment" style="display:none;">
+          <div class="input-row two">
+            <div class="input-group">
+              <label>Kategori</label>
+              <select id="w-g-cat" onchange="onWeightCatChange(this.value)"></select>
+            </div>
+            <div class="input-group">
+              <label>Harga Barang (¥ RMB)</label>
+              <input type="text" id="w-g-rmb" placeholder="cth: 80" oninput="calcWeightEstimate()" inputmode="decimal">
+            </div>
+          </div>
+          <div class="input-row two">
+            <div class="input-group">
+              <label>Berat Aktual (kg)</label>
+              <input type="number" id="w-g-wt" step="0.1" placeholder="cth: 0.5" oninput="calcWeightEstimate()">
+            </div>
+            <div class="input-group">
+              <label>Jumlah</label>
+              <input type="number" id="w-g-qty" value="1" min="1" oninput="calcWeightEstimate()">
+            </div>
+          </div>
+        </div>
+
+        <div class="hc-weight-hint-box" id="w-hint" style="display:none;margin-bottom:14px;background:#F5F8FF;border:1px solid #D5E2FF;border-radius:8px;padding:9px 12px;font-size:11.5px;color:#3A5A9C;line-height:1.55;"></div>
+
+        <div class="calc-result" id="w-calc-result" style="display:none">
+          <div class="result-rows" id="w-result-rows"></div>
+          <div class="result-total-box">
+            <div class="result-total-label">Estimasi total (belum termasuk ongkir Taobao lokal &amp; JNE)</div>
+            <div class="result-total-num" id="w-result-total"></div>
+          </div>
+          <div class="result-pending"><span>⏳</span><div id="w-result-pending-text"></div></div>
+        </div>
+        <div class="calc-empty" id="w-calc-empty">Isi harga dan detail barang di atas untuk lihat estimasi 👆</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="collapse-wrapper">
+    <div class="collapse-trigger" id="w-detail-toggle" onclick="toggleWeightDetail()">
+      <div class="ct-left">
+        <div class="ct-icon" id="w-ct-icon">＋</div>
+        <div>
+          <div class="ct-title">Mau tau detail cara penghitungannya?</div>
+          <div class="ct-sub" id="w-ct-sub">Cara hitung berat tagih, tarif per kg, dan service fee</div>
+        </div>
+      </div>
+      <div class="ct-arrow" id="w-ct-arrow">▾</div>
+    </div>
+
+    <div id="w-detail-sections" class="detail-body">
+
+    <div class="section">
+      <div class="section-label"><div class="section-num">·</div><div class="section-title">Cara Hitung Berat Tagih</div></div>
+      <div class="cbm-box" style="margin-top:0">
+        <div class="cbm-sub">Rumus</div>
+        <div class="cbm-formula" style="font-size:16px;">MAX( P×L×T (cm) ÷ Divisor , Berat Aktual (kg) ) → dibulatkan ke atas</div>
+        <div class="cbm-sub" style="margin-top:6px" id="w-rate-note">Memuat...</div>
+        <div class="example-grid" id="w-examples"></div>
+      </div>
+      <div class="note">⚖️ <strong>Yang lebih besar yang dipakai.</strong> Barang ringan tapi ukurannya besar tetap dihitung dari volumenya (adil buat kami), barang berat tapi kecil dihitung dari beratnya.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><div class="section-num">·</div><div class="section-title">Service Fee</div></div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6">Sama seperti metode lain: biaya jasa beli, pengecekan barang saat kami terima, dan koordinasi pengiriman. Regular Item pakai skema yang sama dengan Sea Freight (10% harga, minimum flat). Garment pakai skema garment (10% harga, minimum flat lebih kecil untuk barang murah).</p>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><div class="section-num">·</div><div class="section-title">Estimasi vs Final</div></div>
+      <div class="note-blue">⏳ Tarif per kg di atas adalah <strong>tarif estimasi global</strong>, dipakai sebelum trip Hand-Carry atau shipment Air Cargo ditentukan. Harga final menyesuaikan biaya real trip/shipment yang benar-benar dipakai saat barang kami proses — bisa sedikit beda dari estimasi awal, dikonfirmasi lewat invoice sisa pembayaran.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><div class="section-num">·</div><div class="section-title">Ringkasan Semua Komponen Biaya</div></div>
+      <table class="rate-table" id="w-summary-table">
+        <thead><tr><th>Komponen</th><th>Cara Hitung</th><th>Keterangan</th></tr></thead>
+        <tbody id="w-summary-table-body"></tbody>
+      </table>
+    </div>
+
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">2</div>
+      <div class="section-title">Ketentuan &amp; Timeline</div>
+    </div>
+    <ul class="rule-list">
+      <li><div class="rule-icon ok">✓</div><div><strong>Tidak digabung batch</strong><span>Beda dari sea freight, biaya dihitung per kg individual — tidak ada minimum bersama yang dibagi rata ke customer lain.</span></div></li>
+      <li><div class="rule-icon ok">✓</div><div><strong>Foto setiap barang saat kami terima</strong><span>Semua barang difoto kondisi luar dan dalam sebelum dikirim.</span></div></li>
+      <li><div class="rule-icon info">i</div><div><strong>Jadwal ikut trip / shipment berjalan</strong><span>Hand-Carry ikut jadwal trip terdekat, Air Cargo ikut jadwal shipment kargo udara. Bisa lebih cepat dari sea freight, tapi tergantung ketersediaan slot.</span></div></li>
+      <li><div class="rule-icon info">i</div><div><strong>Estimasi di awal, final setelah barang ditimbang</strong><span>Estimasi dikirim saat order masuk. Tagihan final dikonfirmasi setelah barang kami terima dan ditimbang/diukur ulang.</span></div></li>
+      <li><div class="rule-icon warn">!</div><div><strong>Ketersediaan bisa berubah</strong><span>Hand-Carry/Air Cargo tergantung slot trip atau shipment yang sedang berjalan. Cek status "tersedia" di form order sebelum order.</span></div></li>
+      <li><div class="rule-icon warn">!</div><div><strong>Barang di atas Rp 5.000.000: konfirmasi dulu</strong><span>Hubungi kami sebelum order untuk barang bernilai sangat tinggi.</span></div></li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-label">
+      <div class="section-num">3</div>
+      <div class="section-title">Syarat &amp; Ketentuan</div>
+    </div>
+    <div class="terms-grid">
+      <div class="term-item"><strong>Ongkir Hand-Carry/Air</strong>Dihitung dari kg tagih (estimasi) di muka, disesuaikan dengan biaya real trip/shipment saat barang kami proses.</div>
+      <div class="term-item"><strong>Pembayaran</strong>DP harga barang + ongkir China lokal di muka. Pelunasan ongkir dan service fee setelah barang kami terima dan ditimbang.</div>
+      <div class="term-item"><strong>Deklarasi Barang</strong>Customer wajib declare jenis barang dengan benar. Jika barang masuk kategori berbeda, selisih biaya ditagih sebelum barang dikirim.</div>
+      <div class="term-item"><strong>Barang Terlarang</strong>Tidak menerima barang berbahaya, liquid, baterai Li-ion lepas, produk yang dilarang bea cukai Indonesia, atau branded palsu.</div>
+      <div class="term-item"><strong>Bea Cukai</strong>Bea masuk (jika ada) ditanggung customer. Kami info jika ada potensi kena bea sebelum pengiriman dilakukan.</div>
+      <div class="term-item"><strong>Perubahan Tarif</strong>Tarif estimasi per kg berlaku sampai ada pemberitahuan. Perubahan diinfo di awal sebelum order diproses.</div>
+    </div>
+  </div>
+
+  </div><!-- end content-weight -->
+
   </div><!-- end content inner -->
 
   <div class="order-link-bar">
@@ -624,8 +807,18 @@
     service_fee_rate_garment: 0.10,
     service_fee_min_garment: 30000,
     garment_min_service_threshold: 300000,
+    handcarry_estimate_rate_per_kg: 200000,
+    handcarry_volumetric_divisor: 6000,
+    air_estimate_rate_per_kg: 220000,
+    air_volumetric_divisor: 6000,
+    sea_available: 1,
+    handcarry_available: 1,
+    air_available: 1,
   };
   let GARMENT_CATS = [];
+  let wMethod = 'handcarry';
+  let wItemType = 'regular';
+  let wGarmentCatIdx = '';
 
   async function loadConfig() {
     if (!sb) { renderStaticExplainers(); return; }
@@ -654,6 +847,9 @@
     renderStaticExplainers();
     buildGarmentReferenceTable();
     if (document.getElementById('garment-rows').children.length === 0) addGarmentRow();
+    renderWeightGarmentCatOptions();
+    updateWeightAvailability();
+    renderWeightDetailStatic();
   }
 
   function renderStaticExplainers() {
@@ -745,8 +941,10 @@
     const html = `Kurs: <strong>1 CNY = Rp ${r}</strong> ${tag}`;
     const el1 = document.getElementById('kurs-label');
     const el2 = document.getElementById('kurs-label-garment');
+    const el3 = document.getElementById('kurs-label-weight');
     if (el1) el1.innerHTML = html;
     if (el2) el2.innerHTML = html;
+    if (el3) el3.innerHTML = html;
   }
 
   async function fetchKurs() {
@@ -758,6 +956,7 @@
         updateKursLabels('live');
         calcEstimate();
         calcGarment();
+        calcWeightEstimate();
         return;
       }
     } catch(e) {}
@@ -1013,6 +1212,226 @@
     document.getElementById('g-result-rows').innerHTML = rows2.map(r =>
       `<div class="result-row ${r.hl ? 'hl' : ''}"><span class="r-label">${r.label}</span><span class="r-val ${r.hl ? 'accent' : ''}">${r.val}</span></div>`
     ).join('');
+  }
+
+  // ============================================================
+  // HAND-CARRY / AIR CARGO CALCULATOR
+  // ============================================================
+  function weightDivisor(method) {
+    return method === 'air' ? (CFG.air_volumetric_divisor || 6000) : (CFG.handcarry_volumetric_divisor || 6000);
+  }
+  function weightRate(method) {
+    return method === 'air' ? (CFG.air_estimate_rate_per_kg || 0) : (CFG.handcarry_estimate_rate_per_kg || 0);
+  }
+  function weightChargeableKg(p, l, t, qty, weightKg, method) {
+    const divisor = weightDivisor(method);
+    const vol = (p && l && t) ? (p * l * t / divisor) * qty : 0;
+    const actual = (parseFloat(weightKg) || 0) * qty;
+    const chargeable = Math.max(vol, actual);
+    return chargeable > 0 ? Math.ceil(chargeable) : 0;
+  }
+  function weightHintText(p, l, t, qty, weightKg, method) {
+    p = parseFloat(p) || 0; l = parseFloat(l) || 0; t = parseFloat(t) || 0;
+    qty = parseInt(qty) || 1;
+    const w = parseFloat(weightKg) || 0;
+    if (!(p && l && t)) return '';
+    const divisor = weightDivisor(method);
+    const volCm3 = p * l * t * qty;
+    const volKg = volCm3 / divisor;
+    const actualKg = w * qty;
+    const chargeable = Math.max(volKg, actualKg);
+    const rounded = chargeable > 0 ? Math.ceil(chargeable) : 0;
+    const qtyLabel = qty > 1 ? ` (×${qty})` : '';
+    if (!w) return `📐 Ukuran${qtyLabel}: ${volCm3.toLocaleString('id-ID')} cm³ ÷ ${divisor} = <b>${volKg.toFixed(2)} kg volumetrik</b>. Isi berat aktual untuk bandingkan — sementara dipakai ${rounded} kg (dibulatkan ke atas).`;
+    if (volKg > actualKg) return `📐 Ukuran${qtyLabel} ${volCm3.toLocaleString('id-ID')} cm³ = <b>${volKg.toFixed(2)} kg volumetrik</b>, lebih besar dari berat aktual ${actualKg.toFixed(1)} kg. Dibulatkan ke <b>${rounded} kg</b>.`;
+    return `⚖️ Berat aktual ${actualKg.toFixed(1)} kg lebih besar dari volumetrik (${volKg.toFixed(2)} kg). Dibulatkan ke <b>${rounded} kg</b>.`;
+  }
+
+  function switchWeightMethod(method) {
+    wMethod = method;
+    document.getElementById('wtab-handcarry').classList.toggle('active', method === 'handcarry');
+    document.getElementById('wtab-air').classList.toggle('active', method === 'air');
+    document.getElementById('w-calc-icon').textContent = method === 'air' ? '🛫' : '✈️';
+    document.getElementById('w-calc-title').textContent = method === 'air' ? 'Estimasi Biaya Air Cargo' : 'Estimasi Biaya Hand-Carry';
+    renderWeightDetailStatic();
+    calcWeightEstimate();
+  }
+
+  function switchWeightItemType(type) {
+    wItemType = type;
+    document.getElementById('witab-regular').classList.toggle('active', type === 'regular');
+    document.getElementById('witab-garment').classList.toggle('active', type === 'garment');
+    document.getElementById('w-block-regular').style.display = type === 'regular' ? 'block' : 'none';
+    document.getElementById('w-block-garment').style.display = type === 'garment' ? 'block' : 'none';
+    calcWeightEstimate();
+  }
+
+  function syncWeightCurrency(src) {
+    const rmbEl = document.getElementById('w-inp-rmb');
+    const idrEl = document.getElementById('w-inp-price');
+    if (src === 'rmb') {
+      const raw = parseFormatted(rmbEl.value);
+      idrEl.value = raw > 0 ? formatThousands(raw * CNY_TO_IDR) : '';
+    } else {
+      const raw = parseFormatted(idrEl.value);
+      rmbEl.value = raw > 0 ? formatThousands(raw / CNY_TO_IDR, 1) : '';
+    }
+    calcWeightEstimate();
+  }
+
+  function renderWeightGarmentCatOptions() {
+    const sel = document.getElementById('w-g-cat');
+    if (!sel) return;
+    const empty = `<option value="" disabled ${wGarmentCatIdx === '' ? 'selected' : ''}>— Pilih kategori —</option>`;
+    sel.innerHTML = empty + GARMENT_CATS.map((c, i) => `<option value="${i}">${c.label}</option>`).join('');
+  }
+  function onWeightCatChange(v) { wGarmentCatIdx = v; calcWeightEstimate(); }
+
+  function updateWeightAvailability() {
+    const availMap = { handcarry: CFG.handcarry_available !== 0, air: CFG.air_available !== 0 };
+    ['handcarry', 'air'].forEach(m => {
+      const btn = document.getElementById('wtab-' + m);
+      if (!btn) return;
+      btn.disabled = !availMap[m];
+      btn.style.opacity = availMap[m] ? '1' : '0.4';
+      btn.style.cursor = availMap[m] ? 'pointer' : 'not-allowed';
+      btn.title = availMap[m] ? '' : 'Sementara tidak tersedia';
+    });
+    if (!availMap[wMethod]) {
+      const fallback = ['handcarry', 'air'].find(m => availMap[m]);
+      if (fallback) switchWeightMethod(fallback);
+    }
+  }
+
+  function updateWeightHint() {
+    const hintEl = document.getElementById('w-hint');
+    if (!hintEl) return;
+    let hint = '';
+    if (wItemType === 'regular') {
+      const p = document.getElementById('w-inp-p').value, l = document.getElementById('w-inp-l').value, t = document.getElementById('w-inp-t').value;
+      const qty = document.getElementById('w-inp-qty').value, wt = document.getElementById('w-inp-wt').value;
+      hint = weightHintText(p, l, t, qty, wt, wMethod);
+    } else {
+      const cat = GARMENT_CATS[parseInt(wGarmentCatIdx)];
+      if (cat) {
+        const qty = document.getElementById('w-g-qty').value, wt = document.getElementById('w-g-wt').value;
+        hint = weightHintText(cat.p, cat.l, cat.t, qty, wt, wMethod);
+      }
+    }
+    hintEl.innerHTML = hint;
+    hintEl.style.display = hint ? 'block' : 'none';
+  }
+
+  function calcWeightEstimate() {
+    updateWeightHint();
+    const resultEl = document.getElementById('w-calc-result');
+    const emptyEl = document.getElementById('w-calc-empty');
+    if (!resultEl || !emptyEl) return;
+    const rate = weightRate(wMethod);
+    let price = 0, kg = 0, serviceFee = 0, isMinService = false, qty = 1;
+
+    if (wItemType === 'regular') {
+      price = parseFormatted(document.getElementById('w-inp-price').value) || 0;
+      const p = parseFloat(document.getElementById('w-inp-p').value) || 0;
+      const l = parseFloat(document.getElementById('w-inp-l').value) || 0;
+      const t = parseFloat(document.getElementById('w-inp-t').value) || 0;
+      qty = parseInt(document.getElementById('w-inp-qty').value) || 1;
+      const wt = document.getElementById('w-inp-wt').value;
+      if (!price || !p || !l || !t) { resultEl.style.display = 'none'; emptyEl.style.display = 'block'; return; }
+      kg = weightChargeableKg(p, l, t, qty, wt, wMethod);
+      if (kg <= 0) { resultEl.style.display = 'none'; emptyEl.style.display = 'block'; return; }
+      serviceFee = getServiceFee(price);
+      isMinService = price < (CFG.service_fee_min_dimension / CFG.service_fee_rate_dimension);
+    } else {
+      if (wGarmentCatIdx === '' || GARMENT_CATS.length === 0) { resultEl.style.display = 'none'; emptyEl.style.display = 'block'; return; }
+      const cat = GARMENT_CATS[parseInt(wGarmentCatIdx)];
+      const rmb = parseFormatted(document.getElementById('w-g-rmb').value) || 0;
+      qty = parseInt(document.getElementById('w-g-qty').value) || 1;
+      const wt = document.getElementById('w-g-wt').value;
+      if (!rmb || !cat) { resultEl.style.display = 'none'; emptyEl.style.display = 'block'; return; }
+      price = rmb * CNY_TO_IDR * qty;
+      kg = weightChargeableKg(cat.p, cat.l, cat.t, qty, wt, wMethod);
+      if (kg <= 0) { resultEl.style.display = 'none'; emptyEl.style.display = 'block'; return; }
+      isMinService = price < CFG.garment_min_service_threshold;
+      serviceFee = isMinService ? CFG.service_fee_min_garment : price * CFG.service_fee_rate_garment;
+    }
+
+    const hcFee = kg * rate;
+    const total = price + hcFee + serviceFee;
+    const methodLabel = wMethod === 'air' ? '🛫 Air Cargo' : '✈️ Hand-Carry';
+    const feeLabel = wMethod === 'air' ? 'Ongkir air cargo' : 'Ongkir hand-carry';
+    const serviceFeeLabel = wItemType === 'garment'
+      ? `Service fee (${isMinService ? 'minimum' : (CFG.service_fee_rate_garment * 100) + '%'})`
+      : `Service fee (${isMinService ? 'minimum' : (CFG.service_fee_rate_dimension * 100) + '%'})`;
+
+    const rows = [
+      { label: `💴 Harga barang${qty > 1 ? ` (×${qty})` : ''}`, val: fmt(price) },
+      { label: `⚖️ Berat ditagih (${methodLabel})`, val: `${kg} kg` },
+      { label: feeLabel, val: fmt(hcFee), hl: true, note: `${kg} kg × ${fmt(rate)}` },
+      { label: serviceFeeLabel, val: fmt(serviceFee), hl: true },
+    ];
+    document.getElementById('w-result-rows').innerHTML = rows.map(r => {
+      const note = r.note ? `<span style="font-size:11px;color:var(--muted);margin-left:6px;font-weight:400">(${r.note})</span>` : '';
+      return `<div class="result-row ${r.hl ? 'hl' : ''}"><span class="r-label">${r.label}</span><span class="r-val">${r.val}${note}</span></div>`;
+    }).join('');
+    document.getElementById('w-result-total').textContent = fmt(total);
+    document.getElementById('w-result-pending-text').innerHTML =
+      `<strong>Belum termasuk:</strong> ongkir Taobao lokal dan ongkir JNE dari Jakarta ke kamu. <strong>Tarif ${methodLabel} di atas estimasi</strong> — harga final menyesuaikan biaya real trip/shipment saat barang kami proses.`;
+
+    resultEl.style.display = 'block';
+    emptyEl.style.display = 'none';
+  }
+
+  function renderWeightDetailStatic() {
+    const rate = weightRate(wMethod);
+    const divisor = weightDivisor(wMethod);
+    const methodName = wMethod === 'air' ? 'Air Cargo' : 'Hand-Carry';
+
+    const noteEl = document.getElementById('w-rate-note');
+    if (noteEl) noteEl.innerHTML = `Tarif estimasi ${methodName}: <strong style="color:white">${fmt(rate)} / kg</strong> &nbsp;·&nbsp; Dihitung per kg individual, tidak digabung batch 🎒`;
+
+    const ex1p = 20, ex1l = 15, ex1t = 10, ex1w = 1.2;
+    const ex1vol = (ex1p * ex1l * ex1t) / divisor;
+    const ex1kg = Math.ceil(Math.max(ex1vol, ex1w));
+    const ex2p = 40, ex2l = 30, ex2t = 20, ex2w = 3;
+    const ex2vol = (ex2p * ex2l * ex2t) / divisor;
+    const ex2kg = Math.ceil(Math.max(ex2vol, ex2w));
+    const exEl = document.getElementById('w-examples');
+    if (exEl) exEl.innerHTML = `
+      <div class="example-card">
+        <div class="ex-label">Contoh: Hobby Parts</div>
+        <div class="ex-item">📐 ${ex1p}×${ex1l}×${ex1t} cm ÷ ${divisor} = ${ex1vol.toFixed(2)} kg volumetrik</div>
+        <div class="ex-item">⚖️ Berat aktual: ${ex1w} kg</div>
+        <div class="ex-total">Ditagih ${ex1kg} kg × ${fmt(rate)} = ${fmt(ex1kg * rate)}</div>
+      </div>
+      <div class="example-card">
+        <div class="ex-label">Contoh: Tas Ransel</div>
+        <div class="ex-item">📐 ${ex2p}×${ex2l}×${ex2t} cm ÷ ${divisor} = ${ex2vol.toFixed(2)} kg volumetrik</div>
+        <div class="ex-item">⚖️ Berat aktual: ${ex2w} kg</div>
+        <div class="ex-total">Ditagih ${ex2kg} kg × ${fmt(rate)} = ${fmt(ex2kg * rate)}</div>
+      </div>`;
+
+    const sumEl = document.getElementById('w-summary-table-body');
+    if (sumEl) sumEl.innerHTML = `
+      <tr><td><strong>Harga Taobao</strong></td><td>Sesuai listing</td><td><span class="tag tag-pass">Pass through</span></td></tr>
+      <tr><td><strong>Ongkir Taobao lokal</strong></td><td>Sesuai struk seller</td><td><span class="tag tag-pass">Pass through</span></td></tr>
+      <tr class="hl"><td><strong>Ongkir ${methodName}</strong></td><td>kg ditagih × ${fmt(rate)} (estimasi)</td><td>Final ikut biaya real trip/shipment</td></tr>
+      <tr class="hl"><td><strong>Service Fee</strong></td><td>${wItemType === 'garment' ? (CFG.service_fee_rate_garment * 100) + '%, min. ' + fmt(CFG.service_fee_min_garment) : (CFG.service_fee_rate_dimension * 100) + '%, min. ' + fmt(CFG.service_fee_min_dimension)}</td><td>Jasa beli, cek, koordinasi</td></tr>
+      <tr><td><strong>JNE ke kamu</strong></td><td>Sesuai tarif JNE</td><td><span class="tag tag-pass">Pass through</span></td></tr>`;
+  }
+
+  function toggleWeightDetail() {
+    const body = document.getElementById('w-detail-sections');
+    const trigger = document.getElementById('w-detail-toggle');
+    const sub = document.getElementById('w-ct-sub');
+    const isOpen = body.classList.contains('open');
+    if (isOpen) {
+      body.classList.remove('open'); trigger.classList.remove('open');
+      sub.textContent = 'Cara hitung berat tagih, tarif per kg, dan service fee';
+    } else {
+      body.classList.add('open'); trigger.classList.add('open');
+      sub.textContent = 'Tap lagi untuk sembunyikan';
+    }
   }
 
   function toggleGarmentDetail() {

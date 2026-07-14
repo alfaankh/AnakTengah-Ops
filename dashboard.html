@@ -114,6 +114,9 @@
   .order-id-cell { font-family:'DM Mono',monospace; font-weight:600; color:var(--blue); font-size:12px; white-space:nowrap; }
   .order-time-cell { font-size:10px; color:var(--muted); font-weight:400; line-height:1.5; white-space:nowrap; font-family:'DM Mono',monospace; }
   .amount-cell { font-family:'DM Mono',monospace; font-weight:600; text-align:right; }
+  .final-cell, .profit-cell { font-family:'DM Mono',monospace; font-weight:700; text-align:right; }
+  .final-cell.settled, .profit-cell.settled { color:var(--green); }
+  .final-cell.unsettled, .profit-cell.unsettled { color:#c9c4bd; font-weight:500; }
 
   .badge { display:inline-block; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px; white-space:nowrap; }
   .badge-submitted { background:#FFF3E0; color:#B45309; }
@@ -496,6 +499,18 @@
       <input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="••••">
       <button class="pin-submit" onclick="checkPin()">Masuk</button>
       <div class="pin-error" id="pinError">PIN salah, coba lagi.</div>
+
+      <div id="pinForgotLink" onclick="toggleForgotPin()" style="margin-top:16px;font-size:12.5px;color:var(--blue);cursor:pointer;text-decoration:underline;">Lupa PIN?</div>
+      <div id="pinRecoveryBox" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);text-align:left;">
+        <label style="display:block;font-size:11px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Kode Recovery</label>
+        <input type="text" id="recoveryCodeInput" placeholder="XXXX-XXXX-XXXX-XXXX" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:13px;outline:none;margin-bottom:10px;box-sizing:border-box;">
+        <label style="display:block;font-size:11px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">PIN Baru (min. 4 digit)</label>
+        <input type="password" inputmode="numeric" maxlength="6" id="recoveryNewPinInput" placeholder="••••" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;outline:none;margin-bottom:10px;box-sizing:border-box;">
+        <label style="display:block;font-size:11px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Konfirmasi PIN Baru</label>
+        <input type="password" inputmode="numeric" maxlength="6" id="recoveryConfirmPinInput" placeholder="••••" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;outline:none;margin-bottom:12px;box-sizing:border-box;">
+        <button class="pin-submit" onclick="resetPinWithRecovery()" style="background:var(--gold);">Reset PIN</button>
+        <div class="pin-error" id="recoveryError"></div>
+      </div>
     </div>
   </div>
 
@@ -577,6 +592,8 @@
                 <th>Status</th>
                 <th>Pembayaran</th>
                 <th style="text-align:right;">Total</th>
+                <th style="text-align:right;">Final</th>
+                <th style="text-align:right;">Profit</th>
                 <th style="text-align:center;width:56px;">Invoice</th>
               </tr>
             </thead>
@@ -817,6 +834,56 @@
   }
   document.getElementById('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
   function logout() { sessionStorage.removeItem(SESSION_KEY); location.reload(); }
+
+  // ============================================================
+  // FORGOT PIN (recovery code, offline-stored — see RECOVERY-CODE.txt)
+  // ============================================================
+  function toggleForgotPin() {
+    const box = document.getElementById('pinRecoveryBox');
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  }
+
+  async function resetPinWithRecovery() {
+    const code = document.getElementById('recoveryCodeInput').value.trim();
+    const newPin = document.getElementById('recoveryNewPinInput').value.trim();
+    const confirmPin = document.getElementById('recoveryConfirmPinInput').value.trim();
+    const errEl = document.getElementById('recoveryError');
+    errEl.textContent = '';
+    errEl.classList.remove('show');
+
+    if (!code || !newPin || !confirmPin) {
+      errEl.textContent = 'Semua kolom wajib diisi.';
+      errEl.classList.add('show');
+      return;
+    }
+    if (newPin.length < 4) {
+      errEl.textContent = 'PIN baru minimal 4 digit.';
+      errEl.classList.add('show');
+      return;
+    }
+    if (newPin !== confirmPin) {
+      errEl.textContent = 'Konfirmasi PIN baru tidak cocok.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    try {
+      const { data, error } = await sb.rpc('reset_admin_pin_with_recovery', { recovery_code: code, new_pin: newPin });
+      if (error) throw error;
+      if (data) {
+        sessionStorage.setItem(SESSION_KEY, data);
+        initAdminClient(data);
+        showPanel();
+      } else {
+        errEl.textContent = 'Kode recovery salah.';
+        errEl.classList.add('show');
+      }
+    } catch (e) {
+      console.error(e);
+      errEl.textContent = e.message && e.message.includes('minimal') ? e.message : 'Gagal reset PIN, coba lagi.';
+      errEl.classList.add('show');
+    }
+  }
 
   function openImageLightbox(url) {
     document.getElementById('lightboxImg').src = url;
@@ -1257,6 +1324,20 @@
         <td onclick="openOrderDetail('${o.id}')"><span class="badge badge-${o.status}">${STATUS_LABELS[o.status] || o.status}</span></td>
         <td onclick="openOrderDetail('${o.id}')"><span class="badge badge-${o.payment_status}">${PAYMENT_LABELS[o.payment_status] || o.payment_status}</span></td>
         <td class="amount-cell" onclick="openOrderDetail('${o.id}')">${fmt(o.total_amount_idr)}</td>
+        ${(() => {
+          // Final amount + profit only read as "real, done" money once the
+          // order is actually delivered AND fully paid — before that they're
+          // still moving targets (recalc, partial payment, box not costed
+          // yet), so they're shown muted rather than in the same green as a
+          // settled transaction, to avoid mistaking a provisional number for
+          // a locked-in one.
+          const isSettled = o.status === 'delivered' && o.payment_status === 'paid';
+          const settledClass = isSettled ? 'settled' : 'unsettled';
+          const finalVal = o.final_invoice_amount_idr != null ? fmt(o.final_invoice_amount_idr) : '—';
+          const profitVal = o.profit_idr != null ? fmt(o.profit_idr) : '—';
+          return `<td class="final-cell ${settledClass}" onclick="openOrderDetail('${o.id}')">${finalVal}</td>
+        <td class="profit-cell ${settledClass}" onclick="openOrderDetail('${o.id}')">${profitVal}</td>`;
+        })()}
         <td style="text-align:center;" onclick="event.stopPropagation()">${invoiceEligible(o) ? `<button class="row-invoice-btn" title="Buat Invoice" onclick="openInvoiceGenerator('${o.id}')">🧾</button>` : (o.final_invoice_amount_idr ? `<span title="Perlu dihitung ulang" style="font-size:13px;">⚠️</span>` : `<span style="color:#ccc;font-size:11px;">—</span>`)}</td>
       </tr>`;
     }).join('');
@@ -3391,10 +3472,18 @@
       const withDims = list.filter(i => i.dims);
       if (!withDims.length) return '';
       const totalKg = list.reduce((s, i) => s + (i.kg || 0), 0);
+      // Actual per-kg rate billed to the customer (trip/shipment customerPerKg,
+      // same for every item in one trip/shipment) — surfaced explicitly so a
+      // lump-sum shipping line never looks like it "came from nowhere". Without
+      // this, e.g. 4kg x Rp250.000 = Rp1.000.000 just reads as a scary round total.
+      const rate = list.find(i => i.freight && i.freight.customer_per_kg)?.freight.customer_per_kg || 0;
       const itemRows = withDims.map(i =>
         `<tr><td>${i.name}</td><td class="inv-r" style="font-family:'DM Mono',monospace;">${i.dims}</td></tr>`
       ).join('');
-      return `${itemRows}<tr><td><b>Total berat ditagih</b></td><td class="inv-r"><b>${totalKg} kg</b></td></tr>`;
+      const rateRow = rate > 0
+        ? `<tr><td colspan="2" style="color:#999;font-size:10.5px;padding-top:0;padding-bottom:0;border-bottom:none;">${totalKg} kg × ${fmt(rate)}/kg</td></tr>`
+        : '';
+      return `${itemRows}<tr><td><b>Total berat ditagih</b></td><td class="inv-r"><b>${totalKg} kg</b></td></tr>${rateRow}`;
     }
     const withDims = list.filter(i => i.dims);
     if (!withDims.length) return '';
@@ -3418,7 +3507,11 @@
     if (isWeightBased) {
       (fb.items || []).forEach(i => { if (i.dims) rows.push(`<div class="ip-row"><span>${i.name}</span><b>${i.dims}</b></div>`); });
       const totalKg = (fb.items || []).reduce((s, i) => s + (i.kg || 0), 0);
+      const wRate = (fb.items || []).find(i => i.freight && i.freight.customer_per_kg)?.freight.customer_per_kg || 0;
       if (totalKg > 0) rows.push(`<div class="ip-row"><span>Total berat ditagih</span><b>${totalKg} kg</b></div>`);
+      // Same "why is this Rp1jt" clarity as the printed invoice — show the
+      // per-kg rate that produced the ongkir total, right under the weight.
+      if (wRate > 0) rows.push(`<div class="ip-row" style="color:#999;font-size:10.5px;"><span>${totalKg} kg × ${fmt(wRate)}/kg</span><b></b></div>`);
     } else {
       const itemsWithDims = (fb.items || []).filter(i => i.dims);
       const totalCbm = (fb.items || []).reduce((s, i) => s + (i.cbm || 0), 0);
