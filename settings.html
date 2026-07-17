@@ -759,7 +759,7 @@
   function renderParamGroupHtml(rows) {
     return rows.map(row => {
       const displayValue = row.unit === 'percent' ? (parseFloat(row.value) * 100) : row.value;
-      const step = row.unit === 'percent' ? '0.01' : (row.unit === 'CBM' ? '0.001' : '1');
+      const step = row.unit === 'percent' ? '0.01' : (row.unit === 'CBM' ? '0.001' : (row.unit === 'kg' ? '0.1' : '1'));
       return `
       <div class="param-row">
         <div class="param-label">

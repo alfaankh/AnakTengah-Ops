@@ -1683,7 +1683,7 @@
     wrap.innerHTML = bannerHtml + handcarryTripsCache.map(trip => {
       const items = ordersCache.flatMap(o => (o.order_items||[]).filter(i => i.handcarry_trip_id === trip.id).map(i => ({ item:i, order:o })));
       const econ = tripEconomics(trip);
-      const usedKg = items.reduce((s, {item}) => s + chargeableKg(item), 0);
+      const usedKg = items.reduce((s, {item}) => s + chargeableKg(item, 'handcarry'), 0);
       const fillPct = econ && econ.sellable > 0 ? Math.min(100, (usedKg / econ.sellable) * 100) : 0;
       const over = econ && usedKg > econ.sellable;
       return `
@@ -1718,7 +1718,7 @@
     document.getElementById('pkgModalSub').textContent = trip.travel_date ? 'Berangkat ' + new Date(trip.travel_date).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}) : 'Tanggal belum diisi';
 
     const itemsHtml = items.length ? items.map(({item, order}) => {
-      const ck = chargeableKg(item);
+      const ck = chargeableKg(item, 'handcarry');
       return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;">
         <div><b>${item.product_name}</b><br><span style="color:var(--muted);font-size:11px;">${order.order_number} — ${order.customers?.name||''}</span></div>
         <div style="text-align:right;font-family:'DM Mono',monospace;">${ck ? ck.toFixed(1)+' kg' : '<span style="color:var(--muted);">berat?</span>'}</div>
@@ -1832,7 +1832,7 @@
     const STATUS = { preparing:'Persiapan', in_transit:'Dalam perjalanan', arrived:'Sudah tiba' };
     wrap.innerHTML = bannerHtml + airShipmentsCache.map(ship => {
       const items = ordersCache.flatMap(o => (o.order_items||[]).filter(i => i.air_shipment_id === ship.id).map(i => ({ item:i, order:o })));
-      const sumKg = items.reduce((s, {item}) => s + chargeableKg(item), 0);
+      const sumKg = items.reduce((s, {item}) => s + chargeableKg(item, 'air'), 0);
       const econ = airEconomics(ship, sumKg);
       return `
         <div class="pkg-card" onclick="openAirDetail('${ship.id}')">
@@ -1857,7 +1857,7 @@
     const ship = airShipmentsCache.find(s => s.id === shipmentId);
     if (!ship) return;
     const items = ordersCache.flatMap(o => (o.order_items||[]).filter(i => i.air_shipment_id === shipmentId).map(i => ({ item:i, order:o })));
-    const sumKg = items.reduce((s, {item}) => s + chargeableKg(item), 0);
+    const sumKg = items.reduce((s, {item}) => s + chargeableKg(item, 'air'), 0);
     const econ = airEconomics(ship, sumKg);
     const STATUS = { preparing:'Persiapan', in_transit:'Dalam perjalanan', arrived:'Sudah tiba' };
 
@@ -1865,7 +1865,7 @@
     document.getElementById('pkgModalSub').textContent = ship.ship_date ? 'Kirim ' + new Date(ship.ship_date).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}) : 'Tanggal belum diisi';
 
     const itemsHtml = items.length ? items.map(({item, order}) => {
-      const ck = chargeableKg(item);
+      const ck = chargeableKg(item, 'air');
       return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;">
         <div><b>${item.product_name}</b><br><span style="color:var(--muted);font-size:11px;">${order.order_number} — ${order.customers?.name||''}</span></div>
         <div style="text-align:right;font-family:'DM Mono',monospace;">${ck ? ck.toFixed(1)+' kg' : '<span style="color:var(--muted);">berat?</span>'}</div>
@@ -3032,19 +3032,34 @@
     return 'xl';
   }
 
-  // Hand-carry chargeable weight = max(actual weight, volumetric weight),
-  // rounded UP to the next whole kg (matches real air/hand-carry providers).
-  // volumetric kg = (L×W×H cm) / divisor (default 6000). Uses actual (dorm)
-  // dims if measured, else customer estimate; actual weight if entered, else
-  // estimated weight. × quantity. Returns 0 if no data yet.
-  function volumetricKg(item) {
+  // Hand-carry/air chargeable weight = max(actual weight, volumetric weight),
+  // rounded UP to the configured increment (default whole kg, adjustable in
+  // Settings > Hand Carry / Air Cargo — e.g. 0.5 so a 300g item rounds to
+  // 0.5kg instead of jumping straight to 1kg). volumetric kg = (L×W×H cm) /
+  // divisor (default 6000, separately configurable per method). Uses actual
+  // (dorm) dims if measured, else customer estimate; actual weight if
+  // entered, else estimated weight. × quantity. Returns 0 if no data yet.
+  function volumetricKg(item, method) {
     const useDorm = item.dorm_length_cm && item.dorm_width_cm && item.dorm_height_cm;
     const L = useDorm ? item.dorm_length_cm : item.customer_est_length_cm;
     const W = useDorm ? item.dorm_width_cm : item.customer_est_width_cm;
     const H = useDorm ? item.dorm_height_cm : item.customer_est_height_cm;
     if (!(L && W && H)) return 0;
-    const divisor = pricingConfigCache.handcarry_volumetric_divisor || 6000;
+    const divisor = method === 'air'
+      ? (pricingConfigCache.air_volumetric_divisor || 6000)
+      : (pricingConfigCache.handcarry_volumetric_divisor || 6000);
     return (L * W * H / divisor) * (item.quantity || 1);
+  }
+
+  function roundUpToIncrement(value, increment) {
+    if (!increment || increment <= 0) increment = 1;
+    const steps = Math.ceil((value / increment) - 1e-9);
+    return Math.round(steps * increment * 1000) / 1000;
+  }
+  function weightRoundingIncrement(method) {
+    return method === 'air'
+      ? (pricingConfigCache.air_rounding_increment_kg || 1)
+      : (pricingConfigCache.handcarry_rounding_increment_kg || 1);
   }
   // Shared wording for "this order's freight is still an estimate" across
   // every place it's shown (modal warning, toasts, invoice block). Keeps the
@@ -3061,13 +3076,17 @@
     return '📦 Paket Gabungan';
   }
 
-  function chargeableKg(item) {
+  // method: 'handcarry' | 'air' — determines which volumetric divisor and
+  // rounding increment apply. Defaults to 'handcarry' if omitted so any
+  // call site I might've missed keeps its old behavior instead of erroring.
+  function chargeableKg(item, method) {
+    const m = method || 'handcarry';
     const actualW = item.actual_weight_kg != null ? parseFloat(item.actual_weight_kg)
       : (item.estimated_weight_kg != null ? parseFloat(item.estimated_weight_kg) : 0);
     const actualTotal = actualW * (item.quantity || 1);
-    const vol = volumetricKg(item);
+    const vol = volumetricKg(item, m);
     const chargeable = Math.max(actualTotal, vol);
-    return chargeable > 0 ? Math.ceil(chargeable) : 0;
+    return chargeable > 0 ? roundUpToIncrement(chargeable, weightRoundingIncrement(m)) : 0;
   }
 
   async function recalculateOrder(orderIdArg, opts = {}) {
@@ -3172,7 +3191,7 @@
     for (const shipId of relevantShipmentIds) {
       const ship = airShipmentsCache.find(s => s.id === shipId);
       const sibs = allItemsInSameShipments.filter(i => i.air_shipment_id === shipId);
-      const sumKg = sibs.reduce((s, i) => s + chargeableKg(i), 0);
+      const sumKg = sibs.reduce((s, i) => s + chargeableKg(i, 'air'), 0);
       const hasCost = ship && ship.actual_cost_idr > 0;
       const margin = pricingConfigCache.air_margin_rate || 0;
 
@@ -3233,7 +3252,7 @@
         // pays chargeable × trip.customerPerKg; your cost = chargeable ×
         // trip.costPerKg. If not assigned to a trip yet (or trip incomplete),
         // fall back to the global estimate rate and mark pending.
-        const ck = chargeableKg(item);
+        const ck = chargeableKg(item, 'handcarry');
         const trip = item.handcarry_trip_id ? handcarryTripsCache.find(t => t.id === item.handcarry_trip_id) : null;
         const econ = trip ? tripEconomics(trip) : null;
         if (econ && ck > 0) {
@@ -3253,7 +3272,7 @@
         // ---- Air cargo freight: per-kg via the item's assigned shipment ----
         // Same shape as hand-carry, but the rate comes from a real shipment
         // cost (airRateByShipment), not a personal-luggage trip.
-        const ck = chargeableKg(item);
+        const ck = chargeableKg(item, 'air');
         const rate = item.air_shipment_id ? airRateByShipment[item.air_shipment_id] : null;
         if (rate && rate.activated && ck > 0) {
           custSeaFreight = ck * rate.customerPerKg;

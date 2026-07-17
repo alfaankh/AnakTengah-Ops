@@ -809,8 +809,10 @@
     garment_min_service_threshold: 300000,
     handcarry_estimate_rate_per_kg: 200000,
     handcarry_volumetric_divisor: 6000,
+    handcarry_rounding_increment_kg: 1,
     air_estimate_rate_per_kg: 220000,
     air_volumetric_divisor: 6000,
+    air_rounding_increment_kg: 1,
     sea_available: 1,
     handcarry_available: 1,
     air_available: 1,
@@ -1223,16 +1225,31 @@
   function weightRate(method) {
     return method === 'air' ? (CFG.air_estimate_rate_per_kg || 0) : (CFG.handcarry_estimate_rate_per_kg || 0);
   }
+  // Rounds a chargeable-weight value UP to the nearest multiple of increment
+  // (e.g. increment 0.5 turns 0.3kg into 0.5kg instead of jumping to 1kg).
+  // Admin-configurable per method (Settings > Hand Carry / Air Cargo);
+  // defaults to 1 (whole kg). Small epsilon guards float division landing
+  // just under a clean boundary and rounding down by mistake.
+  function roundUpToIncrement(value, increment) {
+    if (!increment || increment <= 0) increment = 1;
+    const steps = Math.ceil((value / increment) - 1e-9);
+    return Math.round(steps * increment * 1000) / 1000;
+  }
+  function weightRoundingIncrement(method) {
+    return method === 'air' ? (CFG.air_rounding_increment_kg || 1) : (CFG.handcarry_rounding_increment_kg || 1);
+  }
+
   // weightGrams is the raw value typed into the "Berat" field — entered in
   // grams for precision/convenience, converted to kg here for the volumetric
-  // comparison. The CHARGEABLE result is still rounded up to a whole kg,
-  // unchanged — only the raw input unit changed, not the billing unit.
+  // comparison. The chargeable result is rounded up to the configured
+  // increment (default whole kg) — only the raw input unit changed, the
+  // billing increment is configurable.
   function weightChargeableKg(p, l, t, qty, weightGrams, method) {
     const divisor = weightDivisor(method);
     const vol = (p && l && t) ? (p * l * t / divisor) * qty : 0;
     const actual = ((parseFloat(weightGrams) || 0) / 1000) * qty;
     const chargeable = Math.max(vol, actual);
-    return chargeable > 0 ? Math.ceil(chargeable) : 0;
+    return chargeable > 0 ? roundUpToIncrement(chargeable, weightRoundingIncrement(method)) : 0;
   }
   function weightHintText(p, l, t, qty, weightGrams, method) {
     p = parseFloat(p) || 0; l = parseFloat(l) || 0; t = parseFloat(t) || 0;
@@ -1245,7 +1262,7 @@
     const actualKg = (g / 1000) * qty;
     const actualGramsTotal = g * qty;
     const chargeable = Math.max(volKg, actualKg);
-    const rounded = chargeable > 0 ? Math.ceil(chargeable) : 0;
+    const rounded = chargeable > 0 ? roundUpToIncrement(chargeable, weightRoundingIncrement(method)) : 0;
     const qtyLabel = qty > 1 ? ` (×${qty})` : '';
     if (!g) return `📐 Ukuran${qtyLabel}: ${volCm3.toLocaleString('id-ID')} cm³ ÷ ${divisor} = <b>${volKg.toFixed(2)} kg volumetrik</b>. Isi berat aktual (gram) untuk bandingkan — sementara dipakai ${rounded} kg (dibulatkan ke atas).`;
     if (volKg > actualKg) return `📐 Ukuran${qtyLabel} ${volCm3.toLocaleString('id-ID')} cm³ = <b>${volKg.toFixed(2)} kg volumetrik</b>, lebih besar dari berat aktual ${actualGramsTotal.toLocaleString('id-ID')} gram. Dibulatkan ke <b>${rounded} kg</b>.`;
@@ -1393,14 +1410,15 @@
     const methodName = wMethod === 'air' ? 'Air Cargo' : 'Hand-Carry';
 
     const noteEl = document.getElementById('w-rate-note');
-    if (noteEl) noteEl.innerHTML = `Tarif estimasi ${methodName}: <strong style="color:white">${fmt(rate)} / kg</strong> &nbsp;·&nbsp; Dihitung per kg individual, tidak digabung batch 🎒`;
+    if (noteEl) noteEl.innerHTML = `Tarif estimasi ${methodName}: <strong style="color:white">${fmt(rate)} / kg</strong> &nbsp;·&nbsp; Dibulatkan ke atas tiap <strong style="color:white">${increment} kg</strong> &nbsp;·&nbsp; Dihitung per kg individual, tidak digabung batch 🎒`;
 
+    const increment = weightRoundingIncrement(wMethod);
     const ex1p = 20, ex1l = 15, ex1t = 10, ex1w = 1.2;
     const ex1vol = (ex1p * ex1l * ex1t) / divisor;
-    const ex1kg = Math.ceil(Math.max(ex1vol, ex1w));
+    const ex1kg = roundUpToIncrement(Math.max(ex1vol, ex1w), increment);
     const ex2p = 40, ex2l = 30, ex2t = 20, ex2w = 3;
     const ex2vol = (ex2p * ex2l * ex2t) / divisor;
-    const ex2kg = Math.ceil(Math.max(ex2vol, ex2w));
+    const ex2kg = roundUpToIncrement(Math.max(ex2vol, ex2w), increment);
     const exEl = document.getElementById('w-examples');
     if (exEl) exEl.innerHTML = `
       <div class="example-card">

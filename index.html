@@ -358,6 +358,7 @@
     packing_tier_small_max_cbm: 0.010, packing_tier_medium_max_cbm: 0.050, packing_tier_large_max_cbm: 0.150,
     sea_rate_garment: 10500000, garment_packing_buffer: 0.10,
     service_fee_rate_garment: 0.10, service_fee_min_garment: 30000, garment_min_service_threshold: 300000,
+    handcarry_rounding_increment_kg: 1, air_rounding_increment_kg: 1,
   };
   let GARMENT_CATS = [];
   let CNY_TO_IDR = 2678;
@@ -575,17 +576,34 @@
   function weightMethodEstimateRate(method) {
     return method === 'air' ? (CFG.air_estimate_rate_per_kg || 0) : (CFG.handcarry_estimate_rate_per_kg || 0);
   }
+  // Rounds a chargeable-weight value UP to the nearest multiple of increment
+  // (e.g. increment 0.5 turns 0.3kg into 0.5kg instead of jumping to 1kg).
+  // increment is admin-configurable per method (Settings > Hand Carry / Air
+  // Cargo); defaults to 1 (whole kg, the original behavior). Small epsilon
+  // guards against float division putting something like 1.4999999999 just
+  // under a clean boundary and rounding down by mistake.
+  function roundUpToIncrement(value, increment) {
+    if (!increment || increment <= 0) increment = 1;
+    const steps = Math.ceil((value / increment) - 1e-9);
+    return Math.round(steps * increment * 1000) / 1000;
+  }
+
+  function weightRoundingIncrement(method) {
+    return method === 'air' ? (CFG.air_rounding_increment_kg || 1) : (CFG.handcarry_rounding_increment_kg || 1);
+  }
+
   // weightGrams is the raw value typed into the "Berat" field — customers
   // enter grams (more natural/precise than a decimal kg like "0.45"), we
-  // convert to kg here for the volumetric comparison. The CHARGEABLE result
-  // is still rounded up to a whole kg, unchanged — only the raw input unit
-  // changed, not the billing unit.
+  // convert to kg here for the volumetric comparison. The chargeable result
+  // is rounded up to the configured increment (default whole kg) — only the
+  // raw input unit changed here, the billing increment is configurable.
   function handcarryChargeableKg(p, l, t, qty, weightGrams, method) {
-    const divisor = weightMethodDivisor(method || shippingMethod);
+    const m = method || shippingMethod;
+    const divisor = weightMethodDivisor(m);
     const vol = (p && l && t) ? (p * l * t / divisor) * qty : 0;
     const actual = ((parseFloat(weightGrams) || 0) / 1000) * qty;
     const chargeable = Math.max(vol, actual);
-    return chargeable > 0 ? Math.ceil(chargeable) : 0;
+    return chargeable > 0 ? roundUpToIncrement(chargeable, weightRoundingIncrement(m)) : 0;
   }
 
   // Human-readable breakdown of WHY the chargeable kg is what it is — shown
@@ -595,13 +613,14 @@
     qty = parseInt(qty) || 1;
     const g = parseFloat(weightGrams) || 0;
     if (!(p && l && t)) return '';
-    const divisor = weightMethodDivisor(method || shippingMethod);
+    const m = method || shippingMethod;
+    const divisor = weightMethodDivisor(m);
     const volCm3 = p * l * t * qty;
     const volKg = volCm3 / divisor;
     const actualKg = (g / 1000) * qty;
     const actualGramsTotal = g * qty;
     const chargeable = Math.max(volKg, actualKg);
-    const rounded = chargeable > 0 ? Math.ceil(chargeable) : 0;
+    const rounded = chargeable > 0 ? roundUpToIncrement(chargeable, weightRoundingIncrement(m)) : 0;
     const qtyLabel = qty > 1 ? ` (×${qty})` : '';
 
     if (!g) {
