@@ -2323,8 +2323,11 @@
       return `
       <div class="item-detail-card">
         <div class="idc-header">
-          <div class="idc-name">${item.product_name} <span style="font-weight:400;color:var(--muted);font-size:11px;">${itemTypeIcon}</span></div>
-          <div class="idc-qty">×${item.quantity}</div>
+          <div class="idc-name" style="flex:1;display:flex;align-items:center;gap:6px;">
+            <input type="text" id="itemname-${item.id}" value="${(item.product_name || '').replace(/"/g,'&quot;')}" style="flex:1;font-weight:600;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px;">
+            <span style="font-weight:400;color:var(--muted);font-size:11px;">${itemTypeIcon}</span>
+          </div>
+          <div class="idc-qty">×<input type="number" min="1" step="1" id="itemqty-${item.id}" value="${item.quantity}" style="width:48px;border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;text-align:center;"></div>
         </div>
         ${isItemShippingOnly ? `<div class="idc-row" style="background:#FFF3E0;color:#B45309;padding:6px 10px;border-radius:6px;font-weight:600;">🎒 TITIP KIRIM — barang sudah dibeli/dimiliki sendiri oleh customer. Tidak ada harga barang, hanya ongkir${' '}${item.notes && item.notes.includes('[Titip Kirim') ? '(dikonfirmasi saat order)' : ''}.</div>` : ''}
         ${item.product_link ? `<div class="idc-row">🔗 <a href="${item.product_link}" target="_blank" rel="noopener">${item.product_link}</a></div>` : ''}
@@ -2780,6 +2783,10 @@
     const itemUpdates = [];
     for (const item of (o.order_items || [])) {
       const u = {};
+      const nameVal = (document.getElementById('itemname-'+item.id)?.value || '').trim();
+      if (nameVal && nameVal !== (item.product_name || '')) { u.product_name = nameVal; }
+      const qtyVal = parseInt(document.getElementById('itemqty-'+item.id)?.value, 10);
+      if (qtyVal && qtyVal !== item.quantity) { u.quantity = qtyVal; costChanged = true; }
       const dl = parseFloat(document.getElementById('dorml-'+item.id)?.value) || null;
       const dw = parseFloat(document.getElementById('dormw-'+item.id)?.value) || null;
       const dh = parseFloat(document.getElementById('dormh-'+item.id)?.value) || null;

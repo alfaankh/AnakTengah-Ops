@@ -302,28 +302,29 @@
       <div class="tab-content" id="tab-handcarry">
         <div class="settings-panel-title">Hand Carry</div>
         <div class="settings-panel-sub">Dihitung per kg (berat aktual atau volumetrik, mana yang lebih besar). Harga per kg spesifik diatur per-trip di dashboard.</div>
+
+        <div class="card" style="border:2px solid var(--gold);background:#FFFBF0;">
+          <div class="card-title">🔀 Mode Tarif <span class="badge" id="handcarryFlatRateStatus" style="background:var(--border);">Nonaktif</span></div>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.6;">
+            Default (toggle mati): tarif final ke customer dihitung dari <b>biaya tiket ÷ kapasitas trip aktual</b> setelah barang di-assign ke trip — angka "Tarif per kg untuk ESTIMASI" di bawah cuma placeholder sebelum itu. Nyalakan toggle ini kalau kamu mau <b>selalu pakai tarif ESTIMASI di bawah sebagai tarif FINAL</b> — abaikan tiket &amp; kapasitas trip sepenuhnya, invoice bisa langsung dibuat tanpa nunggu trip di-assign. Biaya aktual/profit tetap dihitung dari tiket trip kalau sudah ada, supaya laporan profit tetap akurat walau customer ditagih flat.
+          </p>
+          <div class="param-row" style="align-items:center;">
+            <div class="param-label" style="flex:1;font-weight:700;">Selalu pakai tarif flat (abaikan tiket &amp; kapasitas trip)</div>
+            <label class="avail-toggle">
+              <input type="checkbox" id="handcarryFlatRateToggle" onchange="saveHandcarryFlatRate(this.checked)">
+              <span class="avail-toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
         <div class="card" style="border-color:#CFE3FF;background:#F7FAFF;">
           <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin:0;">
-            ✈️ Parameter di sini bersifat <b style="color:var(--ink);">global</b>. Biaya tiket &amp; kapasitas luggage diatur per-trip di <b>Trip Hand-Carry</b> (dashboard). Tarif estimasi di bawah hanya untuk perkiraan di form order sebelum trip ditentukan.
+            ✈️ Parameter di sini bersifat <b style="color:var(--ink);">global</b>. Biaya tiket &amp; kapasitas luggage diatur per-trip di <b>Trip Hand-Carry</b> (dashboard). Tarif estimasi di bawah dipakai sebagai placeholder sebelum trip ditentukan — <b>atau sebagai tarif final kalau "Mode Tarif" di atas dinyalakan.</b>
           </p>
         </div>
         <div class="card">
           <div class="card-title">Parameter Hand Carry</div>
           <div id="params-handcarry"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Mode Tarif</div>
-          <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.6;">
-            Default: tarif final ke customer dihitung dari biaya tiket ÷ kapasitas trip aktual setelah barang di-assign ke trip (invoice nunggu sampai trip di-assign). Nyalakan ini kalau kamu mau <strong>selalu pakai tarif estimasi di atas sebagai tarif final</strong> — abaikan tiket & kapasitas trip, dan invoice bisa dibuat tanpa nunggu trip. Biaya aktual/profit tetap dihitung dari tiket trip kalau sudah ada, supaya laporan profit tetap akurat.
-          </p>
-          <div class="param-row" style="align-items:center;">
-            <div class="param-label" style="flex:1;">Selalu pakai tarif flat (abaikan tiket &amp; kapasitas trip)</div>
-            <label class="avail-toggle">
-              <input type="checkbox" id="handcarryFlatRateToggle" onchange="saveHandcarryFlatRate(this.checked)">
-              <span class="avail-toggle-slider"></span>
-            </label>
-            <span id="handcarryFlatRateStatus" style="font-size:11.5px;color:var(--muted);margin-left:10px;min-width:70px;">Nonaktif</span>
-          </div>
         </div>
       </div>
 
