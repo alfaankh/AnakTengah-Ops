@@ -581,17 +581,23 @@
   // Rounds a chargeable-weight value UP to the nearest multiple of increment
   // (e.g. increment 0.5 turns 0.3kg into 0.5kg instead of jumping to 1kg).
   // increment is admin-configurable per method (Settings > Hand Carry / Air
-  // Cargo); defaults to 1 (whole kg, the original behavior). Small epsilon
-  // guards against float division putting something like 1.4999999999 just
-  // under a clean boundary and rounding down by mistake.
+  // Cargo). increment === 0 means "no rounding" — bill the exact weight.
+  // Missing/invalid values fall back to 1 (whole kg, the original behavior).
+  // Small epsilon guards against float division putting something like
+  // 1.4999999999 just under a clean boundary and rounding down by mistake.
   function roundUpToIncrement(value, increment) {
-    if (!increment || increment <= 0) increment = 1;
+    increment = parseFloat(increment);
+    if (isNaN(increment) || increment < 0) increment = 1;
+    if (increment === 0) return Math.round(value * 1000) / 1000; // no rounding
     const steps = Math.ceil((value / increment) - 1e-9);
     return Math.round(steps * increment * 1000) / 1000;
   }
 
+  // Note: uses `!= null` (not `||`) so a configured 0 ("no rounding") isn't
+  // silently coerced into the 1kg default — only a truly missing value is.
   function weightRoundingIncrement(method) {
-    return method === 'air' ? (CFG.air_rounding_increment_kg || 1) : (CFG.handcarry_rounding_increment_kg || 1);
+    const key = method === 'air' ? 'air_rounding_increment_kg' : 'handcarry_rounding_increment_kg';
+    return CFG[key] != null ? CFG[key] : 1;
   }
 
   // weightGrams is the raw value typed into the "Berat" field — customers
