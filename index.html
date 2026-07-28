@@ -359,6 +359,7 @@
     sea_rate_garment: 10500000, garment_packing_buffer: 0.10,
     service_fee_rate_garment: 0.10, service_fee_min_garment: 30000, garment_min_service_threshold: 300000,
     handcarry_rounding_increment_kg: 1, air_rounding_increment_kg: 1,
+    shipping_only_waive_fee_sea: 0, shipping_only_waive_fee_handcarry: 1, shipping_only_waive_fee_air: 0,
   };
   let GARMENT_CATS = [];
   let CNY_TO_IDR = 2678;
@@ -509,6 +510,7 @@
       id, type: 'regular',
       nama: '', link: '', rmb: '', price: '', p: '', l: '', t: '', wt: '', qty: 1, notes: '',
       g_catIdx: '', g_nama: '', g_rmb: '', g_qty: 1, g_wt: '', g_notes: '',
+      selfPurchaseConfirmed: false,
       estimate: null,
     });
     renderItemCards();
@@ -535,7 +537,7 @@
     it[field] = value;
     recalcItem(id);
     if ((shippingMethod === 'handcarry' || shippingMethod === 'air') && HC_HINT_FIELDS.has(field)) {
-      updateHcHint(id, it.type === 'garment');
+      updateHcHint(id, it.type);
     }
   }
 
@@ -632,11 +634,14 @@
     return `⚖️ Berat aktual ${actualGramsTotal.toLocaleString('id-ID')} gram lebih besar dari volumetrik (${volKg.toFixed(2)} kg), jadi dihitung dari beratnya: dibulatkan ke <b>${rounded} kg</b>.`;
   }
 
-  function updateHcHint(id, isGarment) {
+  function updateHcHint(id, mode) {
     const it = getItem(id);
-    const hintEl = document.getElementById(isGarment ? `hcHintG-${id}` : `hcHint-${id}`);
+    // mode: true/'garment' -> garment hint element; 'shipping_only' -> its own
+    // element; anything else (regular, or legacy `false`) -> the regular one.
+    const hintElId = (mode === true || mode === 'garment') ? `hcHintG-${id}` : mode === 'shipping_only' ? `hcHintS-${id}` : `hcHint-${id}`;
+    const hintEl = document.getElementById(hintElId);
     if (!hintEl) return;
-    const hint = isGarment
+    const hint = (mode === true || mode === 'garment')
       ? handcarryWeightHint(getGarmentCatDims(it.g_catIdx).p, getGarmentCatDims(it.g_catIdx).l, getGarmentCatDims(it.g_catIdx).t, it.g_qty, it.g_wt)
       : handcarryWeightHint(it.p, it.l, it.t, it.qty, it.wt);
     hintEl.innerHTML = hint;
@@ -671,6 +676,30 @@
       const packing = getPackingFee(cbm);
       const total = price + seaFee + serviceFee + packing.fee;
       return { mode:'regular', method:'sea', label: it.nama || 'Barang', qty, price, cbm, seaFee, serviceFee, packingFee: packing.fee, packingTier: packing.tier, total };
+    } else if (it.type === 'shipping_only') {
+      // Customer already owns the item — no purchase, so no price and no
+      // normal (%-of-price) service fee. Whether a flat handling fee still
+      // applies is admin-configurable per method (Settings > Ketersediaan).
+      const qty = parseInt(it.qty) || 1;
+      const p = parseFloat(it.p) || 0, l = parseFloat(it.l) || 0, t = parseFloat(it.t) || 0;
+      if (!p || !l || !t) return null;
+
+      const cbm = (p * l * t * qty) / 1_000_000;
+      const waived = !!CFG['shipping_only_waive_fee_' + shippingMethod];
+      const serviceFee = waived ? 0 : (CFG.service_fee_min_dimension || 0);
+
+      if (shippingMethod === 'handcarry' || shippingMethod === 'air') {
+        const kg = handcarryChargeableKg(p, l, t, qty, it.wt);
+        if (kg <= 0) return null;
+        const hcFee = kg * weightMethodEstimateRate(shippingMethod);
+        const total = hcFee + serviceFee;
+        return { mode:'shipping_only', method:shippingMethod, label: it.nama || 'Barang (titip kirim)', qty, price:0, kg, hcFee, serviceFee, waived, total };
+      }
+
+      const seaFee = cbm * CFG.sea_rate_dimension;
+      const packing = getPackingFee(cbm);
+      const total = seaFee + serviceFee + packing.fee;
+      return { mode:'shipping_only', method:'sea', label: it.nama || 'Barang (titip kirim)', qty, price:0, cbm, seaFee, serviceFee, waived, packingFee: packing.fee, packingTier: packing.tier, total };
     } else {
       if (it.g_catIdx === '' || GARMENT_CATS.length === 0) return null;
       const cat = GARMENT_CATS[parseInt(it.g_catIdx)];
@@ -736,7 +765,27 @@
   function buildEstimateGroupsHtml(ests) {
     let html = '';
     ests.forEach((est, idx) => {
-      if (est.mode === 'regular' && (est.method === 'handcarry' || est.method === 'air')) {
+      if (est.mode === 'shipping_only' && (est.method === 'handcarry' || est.method === 'air')) {
+        const rate = weightMethodEstimateRate(est.method);
+        const methodTag = est.method === 'air' ? '🛫 air cargo' : '✈️ hand-carry';
+        const ongkirLabel = est.method === 'air' ? 'Ongkir air cargo (estimasi)' : 'Ongkir hand-carry (estimasi)';
+        html += `<div class="estimate-item-group">
+          <div class="eig-title">${idx+1}. ${est.label} ${est.qty > 1 ? `(×${est.qty})` : ''} <span style="color:var(--muted);font-weight:400;">— 🎒 titip kirim · ${methodTag}</span></div>
+          <div class="estimate-row"><span class="el">Berat ditagih</span><span class="ev">${est.kg} kg</span></div>
+          <div class="estimate-row"><span class="el">${ongkirLabel}</span><span class="ev">${est.kg} kg × ${fmt(rate)} = ${fmt(est.hcFee)}</span></div>
+          <div class="estimate-row"><span class="el">Handling fee${est.waived ? ' (gratis)' : ''}</span><span class="ev">${fmt(est.serviceFee)}</span></div>
+          <div class="estimate-row" style="font-weight:700;padding-top:6px;"><span class="el">Subtotal</span><span class="ev">${fmt(est.total)}</span></div>
+        </div>`;
+      } else if (est.mode === 'shipping_only') {
+        html += `<div class="estimate-item-group">
+          <div class="eig-title">${idx+1}. ${est.label} ${est.qty > 1 ? `(×${est.qty})` : ''} <span style="color:var(--muted);font-weight:400;">— 🎒 titip kirim</span></div>
+          <div class="estimate-row"><span class="el">Volume</span><span class="ev">${est.cbm.toFixed(4)} CBM</span></div>
+          <div class="estimate-row"><span class="el">Sea freight</span><span class="ev">${fmt(est.seaFee)}</span></div>
+          <div class="estimate-row"><span class="el">Handling fee${est.waived ? ' (gratis)' : ''}</span><span class="ev">${fmt(est.serviceFee)}</span></div>
+          <div class="estimate-row"><span class="el">Packing (${est.packingTier})</span><span class="ev">${fmt(est.packingFee)}</span></div>
+          <div class="estimate-row" style="font-weight:700;padding-top:6px;"><span class="el">Subtotal</span><span class="ev">${fmt(est.total)}</span></div>
+        </div>`;
+      } else if (est.mode === 'regular' && (est.method === 'handcarry' || est.method === 'air')) {
         const rate = weightMethodEstimateRate(est.method);
         const methodTag = est.method === 'air' ? '🛫 air cargo' : '✈️ hand-carry';
         const ongkirLabel = est.method === 'air' ? 'Ongkir air cargo (estimasi)' : 'Ongkir hand-carry (estimasi)';
@@ -929,6 +978,57 @@
           </div>
         </div>`;
 
+      const shippingOnlyFeeWaived = CFG['shipping_only_waive_fee_' + shippingMethod];
+      const shippingOnlyFeeNote = shippingOnlyFeeWaived
+        ? `✅ <strong>Tidak ada handling fee</strong> untuk metode ${shippingMethod === 'sea' ? 'Sea Freight' : shippingMethod === 'air' ? 'Air Cargo' : 'Hand-Carry'} — kamu cuma bayar ongkirnya.`
+        : `ℹ️ Harga barang & service fee normal tidak berlaku, tapi tetap ada <strong>handling fee flat ${fmt(CFG.service_fee_min_dimension || 0)}</strong> untuk metode ${shippingMethod === 'sea' ? 'Sea Freight' : shippingMethod === 'air' ? 'Air Cargo' : 'Hand-Carry'} (barang tetap perlu kami terima, cek, dan proses meski kamu beli sendiri).`;
+      const shippingOnlyBlock = `
+        <div id="mode-shipping_only-${it.id}" style="display:${it.type==='shipping_only'?'block':'none'};">
+          <div class="handcarry-explainer" style="background:#F0F7FF;border-color:#C8DEFF;color:#2A4A7A;">
+            🎒 <strong>Titip Kirim</strong> — buat barang yang <strong>sudah kamu beli/miliki sendiri</strong> (bukan kami yang beliin). Kami cuma kirim, jadi tidak ada harga barang atau service fee beli di sini.
+          </div>
+          <div class="input-row two">
+            <div class="input-group">
+              <label>Nama Barang <span class="req">*</span></label>
+              <input type="text" value="${it.nama}" placeholder="cth: Titipan teman dari Guangzhou" oninput="updateItemField(${it.id},'nama',this.value)">
+            </div>
+            <div class="input-group">
+              <label>Jumlah</label>
+              <input type="number" value="${it.qty}" min="1" oninput="updateItemField(${it.id},'qty',this.value)">
+            </div>
+          </div>
+          <div class="input-row three">
+            <div class="input-group">
+              <label>Panjang (cm) <span class="req">*</span></label>
+              <input type="number" value="${it.p}" placeholder="20" oninput="updateItemField(${it.id},'p',this.value)">
+            </div>
+            <div class="input-group">
+              <label>Lebar (cm) <span class="req">*</span></label>
+              <input type="number" value="${it.l}" placeholder="15" oninput="updateItemField(${it.id},'l',this.value)">
+            </div>
+            <div class="input-group">
+              <label>Tinggi (cm) <span class="req">*</span></label>
+              <input type="number" value="${it.t}" placeholder="10" oninput="updateItemField(${it.id},'t',this.value)">
+            </div>
+          </div>
+          <div class="input-row two" style="display:${isWeightMethod()?'flex':'none'};">
+            <div class="input-group">
+              <label>Berat Estimasi (gram) <span class="req">*</span></label>
+              <input type="number" step="1" min="0" value="${it.wt}" placeholder="cth: 1200" oninput="updateItemField(${it.id},'wt',this.value)">
+            </div>
+          </div>
+          <div class="hc-weight-hint" id="hcHintS-${it.id}" style="display:none;"></div>
+          <div class="input-group" style="margin-bottom:12px;">
+            <label>Catatan (opsional)</label>
+            <textarea oninput="updateItemField(${it.id},'notes',this.value)" placeholder="cth: dari siapa, dititip di mana">${it.notes}</textarea>
+          </div>
+          <div class="hc-weight-hint">${shippingOnlyFeeNote}</div>
+          <label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-size:12.5px;color:var(--ink);line-height:1.5;cursor:pointer;">
+            <input type="checkbox" ${it.selfPurchaseConfirmed?'checked':''} style="margin-top:2px;" onchange="updateItemField(${it.id},'selfPurchaseConfirmed',this.checked)">
+            <span>Saya konfirmasi barang ini <strong>sudah saya beli/miliki sendiri</strong> — Anak Tengah hanya mengirimkan, tidak bertanggung jawab atas pembelian, kondisi, atau keaslian barang. <span class="req">*</span></span>
+          </label>
+        </div>`;
+
       return `
         <div class="item-card">
           <div class="item-card-header">
@@ -938,9 +1038,11 @@
           <div class="mode-tabs">
             <button type="button" class="mode-tab ${it.type==='regular'?'active':''}" onclick="switchItemMode(${it.id},'regular')">📦 Regular Item</button>
             <button type="button" class="mode-tab ${it.type==='garment'?'active':''}" onclick="switchItemMode(${it.id},'garment')">👕 Garment</button>
+            <button type="button" class="mode-tab ${it.type==='shipping_only'?'active':''}" onclick="switchItemMode(${it.id},'shipping_only')">🎒 Titip Kirim</button>
           </div>
           ${regularBlock}
           ${garmentBlock}
+          ${shippingOnlyBlock}
           <div class="input-group" style="margin-top:14px;margin-bottom:0;">
             <label>Screenshot Barang (opsional)</label>
             <div class="file-drop" onclick="document.getElementById('f-screenshot-${it.id}').click()">
@@ -959,7 +1061,7 @@
 
     recalcAll();
     items.forEach(it => updateItemSubtotalDisplay(it.id));
-    if (isWeightMethod()) items.forEach(it => updateHcHint(it.id, it.type === 'garment'));
+    if (isWeightMethod()) items.forEach(it => updateHcHint(it.id, it.type));
   }
 
   function showError(msg) {
@@ -987,6 +1089,12 @@
     const validItems = items.map(it => ({ it, est: calcOneItem(it) })).filter(x => x.est);
     if (validItems.length === 0) {
       showError('Mohon lengkapi detail minimal satu barang untuk melihat estimasi.');
+      return;
+    }
+
+    const unconfirmedShippingOnly = validItems.find(x => x.est.mode === 'shipping_only' && !x.it.selfPurchaseConfirmed);
+    if (unconfirmedShippingOnly) {
+      showError(`Mohon centang konfirmasi "sudah beli/miliki sendiri" untuk barang Titip Kirim: ${unconfirmedShippingOnly.it.nama || 'barang tanpa nama'}.`);
       return;
     }
 
@@ -1042,6 +1150,18 @@
           estW = parseFloat(it.l) || null;
           estH = parseFloat(it.t) || null;
           itemType = 'regular';
+          garmentCatId = null;
+          // it.wt is entered in grams; DB column is kg, convert here.
+          estWeightKg = it.wt ? (parseFloat(it.wt) / 1000) : null;
+        } else if (est.mode === 'shipping_only') {
+          productName = it.nama.trim() || 'Barang (titip kirim)';
+          productLink = null;
+          estimatedPriceCny = null; // customer already owns this — no purchase price
+          notes = `[Titip Kirim — barang sudah dibeli/dimiliki sendiri oleh customer, dikonfirmasi saat order]${it.notes.trim() ? ' ' + it.notes.trim() : ''}`;
+          estL = parseFloat(it.p) || null;
+          estW = parseFloat(it.l) || null;
+          estH = parseFloat(it.t) || null;
+          itemType = 'shipping_only';
           garmentCatId = null;
           // it.wt is entered in grams; DB column is kg, convert here.
           estWeightKg = it.wt ? (parseFloat(it.wt) / 1000) : null;

@@ -336,6 +336,13 @@
           <div class="card-title">Metode Aktif</div>
           <div id="params-availability"></div>
         </div>
+        <div class="card">
+          <div class="card-title">Handling Fee untuk "Titip Kirim" <span class="badge">barang sudah dibeli sendiri oleh customer</span></div>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.6;">
+            Kalau customer pilih "🎒 Titip Kirim" (barang sudah dia beli/miliki sendiri, cuma minta dikirim), harga barang &amp; service fee normal tidak berlaku. Toggle di sini menentukan apakah tetap ada handling fee flat per metode — pakai nilai "Service Fee minimum" di tab Regular Item. Nyalakan (gratis) hanya kalau metodenya cukup ringan buat kamu proses tanpa biaya tambahan.
+          </p>
+          <div id="params-shipping_only_fee"></div>
+        </div>
       </div>
 
       <!-- ACTUAL COST TAB -->
@@ -699,6 +706,7 @@
     renderParamGroup('params-handcarry', all.filter(r => r.category === 'handcarry'));
     renderParamGroup('params-air', all.filter(r => r.category === 'air'));
     renderAvailabilityGroup('params-availability', all.filter(r => r.category === 'availability'));
+    renderShippingOnlyFeeGroup('params-shipping_only_fee', all.filter(r => r.category === 'shipping_only_fee'));
     renderFreightMarginGroup('params-actual_freight', all);
     renderParamGroup('params-actual_china_shipping', all.filter(r => r.key === 'china_local_shipping_markup_rate'));
     renderParamGroup('params-actual_packing', all.filter(r => r.category === 'actual_cost' && ACTUAL_PACKING_KEYS.has(r.key)));
@@ -754,6 +762,35 @@
     pricingConfigCache[key].value = checked ? '1' : '0';
     showToast(`${METHOD_LABELS[key] || key} ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
     renderAvailabilityGroup('params-availability', Object.values(pricingConfigCache).filter(r => r.category === 'availability'));
+  }
+
+  const SHIPPING_ONLY_FEE_LABELS = {
+    shipping_only_waive_fee_sea: '🚢 Sea Freight',
+    shipping_only_waive_fee_handcarry: '✈️ Hand-Carry',
+    shipping_only_waive_fee_air: '🛫 Air Cargo',
+  };
+  function renderShippingOnlyFeeGroup(containerId, rows) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = rows.map(row => {
+      const free = row.value === '1' || row.value === 1 || row.value === true;
+      return `
+      <div class="param-row" style="align-items:center;">
+        <div class="param-label" style="flex:1;">${SHIPPING_ONLY_FEE_LABELS[row.key] || row.key}</div>
+        <label class="avail-toggle">
+          <input type="checkbox" ${free ? 'checked' : ''} onchange="saveShippingOnlyFee('${row.key}', this.checked)">
+          <span class="avail-toggle-slider"></span>
+        </label>
+        <span style="font-size:11.5px;color:${free ? 'var(--green)' : 'var(--muted)'};margin-left:10px;min-width:90px;">${free ? 'Gratis' : 'Tetap kena fee'}</span>
+      </div>`;
+    }).join('');
+  }
+  async function saveShippingOnlyFee(key, checked) {
+    const { error } = await sb.from('pricing_config').update({ value: checked ? '1' : '0', updated_at: new Date().toISOString() }).eq('key', key);
+    if (error) { showToast('Gagal menyimpan: ' + error.message, true); return; }
+    pricingConfigCache[key].value = checked ? '1' : '0';
+    showToast(`${SHIPPING_ONLY_FEE_LABELS[key] || key} ${checked ? 'digratiskan' : 'tetap kena handling fee'}`);
+    renderShippingOnlyFeeGroup('params-shipping_only_fee', Object.values(pricingConfigCache).filter(r => r.category === 'shipping_only_fee'));
   }
 
   function renderParamGroupHtml(rows) {
