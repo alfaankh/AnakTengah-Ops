@@ -311,6 +311,20 @@
           <div class="card-title">Parameter Hand Carry</div>
           <div id="params-handcarry"></div>
         </div>
+        <div class="card">
+          <div class="card-title">Mode Tarif</div>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.6;">
+            Default: tarif final ke customer dihitung dari biaya tiket ÷ kapasitas trip aktual setelah barang di-assign ke trip (invoice nunggu sampai trip di-assign). Nyalakan ini kalau kamu mau <strong>selalu pakai tarif estimasi di atas sebagai tarif final</strong> — abaikan tiket & kapasitas trip, dan invoice bisa dibuat tanpa nunggu trip. Biaya aktual/profit tetap dihitung dari tiket trip kalau sudah ada, supaya laporan profit tetap akurat.
+          </p>
+          <div class="param-row" style="align-items:center;">
+            <div class="param-label" style="flex:1;">Selalu pakai tarif flat (abaikan tiket &amp; kapasitas trip)</div>
+            <label class="avail-toggle">
+              <input type="checkbox" id="handcarryFlatRateToggle" onchange="saveHandcarryFlatRate(this.checked)">
+              <span class="avail-toggle-slider"></span>
+            </label>
+            <span id="handcarryFlatRateStatus" style="font-size:11.5px;color:var(--muted);margin-left:10px;min-width:70px;">Nonaktif</span>
+          </div>
+        </div>
       </div>
 
       <!-- AIR CARGO TAB -->
@@ -703,7 +717,8 @@
     renderParamGroup('params-dimension_mode_main', all.filter(r => r.category === 'dimension_mode' && !PACKING_KEYS.has(r.key)));
     renderParamGroup('params-dimension_mode_packing', all.filter(r => r.category === 'dimension_mode' && PACKING_KEYS.has(r.key)));
     renderParamGroup('params-garment_mode', all.filter(r => r.category === 'garment_mode'));
-    renderParamGroup('params-handcarry', all.filter(r => r.category === 'handcarry'));
+    renderParamGroup('params-handcarry', all.filter(r => r.category === 'handcarry' && r.key !== 'handcarry_use_flat_rate'));
+    renderHandcarryFlatRateToggle(all.find(r => r.key === 'handcarry_use_flat_rate'));
     renderParamGroup('params-air', all.filter(r => r.category === 'air'));
     renderAvailabilityGroup('params-availability', all.filter(r => r.category === 'availability'));
     renderShippingOnlyFeeGroup('params-shipping_only_fee', all.filter(r => r.category === 'shipping_only_fee'));
@@ -762,6 +777,23 @@
     pricingConfigCache[key].value = checked ? '1' : '0';
     showToast(`${METHOD_LABELS[key] || key} ${checked ? 'diaktifkan' : 'dinonaktifkan'}`);
     renderAvailabilityGroup('params-availability', Object.values(pricingConfigCache).filter(r => r.category === 'availability'));
+  }
+
+  function renderHandcarryFlatRateToggle(row) {
+    const toggle = document.getElementById('handcarryFlatRateToggle');
+    const status = document.getElementById('handcarryFlatRateStatus');
+    if (!toggle || !row) return;
+    const on = row.value === '1' || row.value === 1 || row.value === true;
+    toggle.checked = on;
+    status.textContent = on ? 'Aktif' : 'Nonaktif';
+    status.style.color = on ? 'var(--green)' : 'var(--muted)';
+  }
+  async function saveHandcarryFlatRate(checked) {
+    const { error } = await sb.from('pricing_config').update({ value: checked ? '1' : '0', updated_at: new Date().toISOString() }).eq('key', 'handcarry_use_flat_rate');
+    if (error) { showToast('Gagal menyimpan: ' + error.message, true); return; }
+    pricingConfigCache['handcarry_use_flat_rate'].value = checked ? '1' : '0';
+    showToast(checked ? 'Tarif flat diaktifkan untuk semua trip hand-carry' : 'Kembali ke tarif berbasis tiket/kapasitas trip');
+    renderHandcarryFlatRateToggle(pricingConfigCache['handcarry_use_flat_rate']);
   }
 
   const SHIPPING_ONLY_FEE_LABELS = {

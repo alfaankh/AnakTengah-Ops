@@ -3362,16 +3362,28 @@
         // pays chargeable × trip.customerPerKg; your cost = chargeable ×
         // trip.costPerKg. If not assigned to a trip yet (or trip incomplete),
         // fall back to the global estimate rate and mark pending.
+        //
+        // EXCEPTION: Settings > Hand Carry > "Selalu pakai tarif flat" lets you
+        // skip all of that and always bill the customer the flat estimate
+        // rate, regardless of which trip/ticket it ends up on — invoice never
+        // waits on a trip assignment in that mode. Actual cost still prefers
+        // the real trip cost when one's assigned, so profit reporting stays
+        // honest even though the customer price is deliberately flat.
         const ck = chargeableKg(item, 'handcarry');
+        const useFlatRate = (pricingConfigCache.handcarry_use_flat_rate || 0) == 1;
+        const estRate = pricingConfigCache.handcarry_estimate_rate_per_kg || 0;
         const trip = item.handcarry_trip_id ? handcarryTripsCache.find(t => t.id === item.handcarry_trip_id) : null;
         const econ = trip ? tripEconomics(trip) : null;
-        if (econ && ck > 0) {
+        if (useFlatRate) {
+          custSeaFreight = ck * estRate;
+          actualSeaFreight = (econ && ck > 0) ? ck * econ.costPerKg : ck * estRate;
+          freightDetail = { mode: 'handcarry_flat', kg: ck, customer_per_kg: estRate, cost_per_kg: (econ ? econ.costPerKg : estRate), trip_name: trip ? trip.name : null };
+        } else if (econ && ck > 0) {
           custSeaFreight = ck * econ.customerPerKg;
           actualSeaFreight = ck * econ.costPerKg;
           freightDetail = { mode: 'handcarry', kg: ck, cost_per_kg: econ.costPerKg, customer_per_kg: econ.customerPerKg, trip_name: trip.name };
         } else {
           // provisional: global estimate rate, not finalizable until trip assigned
-          const estRate = pricingConfigCache.handcarry_estimate_rate_per_kg || 0;
           custSeaFreight = ck * estRate;
           actualSeaFreight = ck * estRate; // unknown real cost yet; no phantom profit
           freightDetail = { mode: 'handcarry_pending', kg: ck, customer_per_kg: estRate };
