@@ -3244,6 +3244,14 @@
     // so the invoice renders stored facts, never recomputed-at-render values.
     const bd = { price: 0, service: 0, kargo: 0, packing: 0, lokal_china: 0, items: [] };
 
+    // Combine-small-items pool: regular (dimension-mode) items whose service
+    // fee is being freshly computed this pass (not held at a frozen estimate)
+    // share ONE Rp minimum across the whole order, instead of each item eating
+    // its own floor. E.g. two Rp50rb-floor items no longer become Rp100rb —
+    // they combine to Rp50rb once, same as if they'd been one item.
+    let regularFreshFeeRaw = 0;
+    let hasRegularFreshItem = false;
+
     // Kurs: ALWAYS the rate snapshotted at order submission (matches what the
     // customer was quoted in order.html). Floor-based fallback only for legacy
     // orders created before kurs_used existed.
@@ -3476,10 +3484,14 @@
         custServiceFee = waived ? 0 : (pricingConfigCache.service_fee_min_dimension || 0);
       } else if (!hasActualPrice && eb && eb.service_fee != null) {
         custServiceFee = eb.service_fee;
+      } else if (isGarment) {
+        custServiceFee = priceIdr < pricingConfigCache.garment_min_service_threshold ? pricingConfigCache.service_fee_min_garment : priceIdr * pricingConfigCache.service_fee_rate_garment;
       } else {
-        custServiceFee = isGarment
-          ? (priceIdr < pricingConfigCache.garment_min_service_threshold ? pricingConfigCache.service_fee_min_garment : priceIdr * pricingConfigCache.service_fee_rate_garment)
-          : Math.max(priceIdr * pricingConfigCache.service_fee_rate_dimension, pricingConfigCache.service_fee_min_dimension);
+        // Raw percentage fee, no per-item floor here — the floor is applied
+        // ONCE across the whole order's combined pool, after the loop.
+        custServiceFee = priceIdr * pricingConfigCache.service_fee_rate_dimension;
+        regularFreshFeeRaw += custServiceFee;
+        hasRegularFreshItem = true;
       }
 
       const chinaShippingActual = item.china_local_shipping_actual_idr != null ? parseFloat(item.china_local_shipping_actual_idr) : 0;
@@ -3506,6 +3518,15 @@
         freight_idr: Math.round(custSeaFreight),
         kg: (freightDetail && freightDetail.kg) ? freightDetail.kg : null,
       });
+    }
+
+    // Combine-small-items top-up: if the freshly-computed regular items'
+    // combined raw fee falls short of the minimum, bring the ORDER'S total
+    // up to the minimum once (not once per item).
+    if (hasRegularFreshItem && regularFreshFeeRaw < pricingConfigCache.service_fee_min_dimension) {
+      const topUp = pricingConfigCache.service_fee_min_dimension - regularFreshFeeRaw;
+      bd.service += topUp;
+      customerTotal += topUp;
     }
 
     // Batch freight summary for this order (if any item used a batch rate) —
