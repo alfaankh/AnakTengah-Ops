@@ -3687,6 +3687,7 @@
     if (fb.packing > 0) rows.push(`<div class="ip-row"><span>Packing</span><b>${fmt(fb.packing)}</b></div>`);
     if (fb.lokal_china > 0) rows.push(`<div class="ip-row"><span>Biaya lokal China</span><b>${fmt(fb.lokal_china)}</b></div>`);
     if (fb.jakarta > 0) rows.push(`<div class="ip-row"><span>Kirim Jakarta${o.jakarta_courier ? ` (${o.jakarta_courier})` : ''}</span><b>${fmt(fb.jakarta)}</b></div>`);
+    if (fb.jakarta > 0 && o.resi_number) rows.push(`<div class="ip-row" style="color:#999;font-size:10.5px;"><span>No. Resi: ${o.resi_number}</span><b></b></div>`);
     adjustments.forEach(a => {
       const amt = parseFloat(a.amount_idr) || 0;
       rows.push(`<div class="ip-row"><span>${a.label}</span><b>${amt >= 0 ? fmt(amt) : '−' + fmt(Math.abs(amt))}</b></div>`);
@@ -3732,6 +3733,7 @@
     let pctUp = 0;
     let anyWantsNote = false;
     const couriers = new Set();
+    const resiNumbers = new Set();
     // A box group is either all-sea, all-handcarry, or all-air in practice
     // (hand-carry/air orders have no combined_package_id, so each gets its
     // own solo group). Use the first order's method for labeling.
@@ -3750,6 +3752,7 @@
       if (bf && bf.rate_up && bf.standard_rate>0) pctUp = Math.max(pctUp, Math.round(((bf.batch_rate-bf.standard_rate)/bf.standard_rate)*100));
       if (o.show_kargo_note !== false) anyWantsNote = true;
       if (o.jakarta_courier) couriers.add(o.jakarta_courier);
+      if (o.resi_number) resiNumbers.add(o.resi_number);
     });
 
     // Softened, generic wording — no percentage. Shown only if at least one
@@ -3758,6 +3761,7 @@
     const kargoNote = (method === 'sea' && pctUp>0 && anyWantsNote) ? `<div style="font-size:10px;color:#888;line-height:1.5;margin-top:2px;">Tarif kargo pada pengiriman ini menyesuaikan volume &amp; biaya aktual dari forwarder.</div>` : '';
     const kargoLabel = method === 'handcarry' ? 'Ongkir hand-carry' : method === 'air' ? 'Ongkir air cargo' : 'Biaya kargo';
     const courierLabel = couriers.size ? ` (${[...couriers].join(', ')})` : '';
+    const resiLabel = resiNumbers.size ? `<div style="font-size:10px;color:#888;margin-top:2px;">No. Resi: ${[...resiNumbers].join(', ')}</div>` : '';
 
     const rows = [];
     if (price>0) rows.push(`<tr><td>Harga barang</td><td class="inv-r">${fmt(price)}</td></tr>`);
@@ -3765,7 +3769,7 @@
     if (kargo>0) rows.push(`<tr><td>${kargoLabel}${kargoNote}</td><td class="inv-r" style="vertical-align:top;">${fmt(kargo)}</td></tr>`);
     if (packing>0) rows.push(`<tr><td>Packing</td><td class="inv-r">${fmt(packing)}</td></tr>`);
     if (lokal>0) rows.push(`<tr><td>Biaya lokal China</td><td class="inv-r">${fmt(lokal)}</td></tr>`);
-    if (jakarta>0) rows.push(`<tr><td>Kirim Jakarta${courierLabel}</td><td class="inv-r">${fmt(jakarta)}</td></tr>`);
+    if (jakarta>0) rows.push(`<tr><td>Kirim Jakarta${courierLabel}${resiLabel}</td><td class="inv-r">${fmt(jakarta)}</td></tr>`);
     if (adjTotal!==0) rows.push(`<tr><td>Penyesuaian</td><td class="inv-r">${adjTotal>=0?fmt(adjTotal):'−'+fmt(Math.abs(adjTotal))}</td></tr>`);
 
     const dimsRowsHtml = buildItemDimsRows(allItems, method);
@@ -3931,7 +3935,7 @@
     if (fb.kargo > 0) rows.push(`<tr><td>${kargoLabel}${kargoNote}</td><td class="inv-r" style="vertical-align:top;">${fmt(fb.kargo)}</td></tr>`);
     if (fb.packing > 0) rows.push(`<tr><td>Packing</td><td class="inv-r">${fmt(fb.packing)}</td></tr>`);
     if (fb.lokal_china > 0) rows.push(`<tr><td>Biaya lokal China</td><td class="inv-r">${fmt(fb.lokal_china)}</td></tr>`);
-    if (fb.jakarta > 0) rows.push(`<tr><td>Kirim Jakarta${o.jakarta_courier ? ` (${o.jakarta_courier})` : ''}</td><td class="inv-r">${fmt(fb.jakarta)}</td></tr>`);
+    if (fb.jakarta > 0) rows.push(`<tr><td>Kirim Jakarta${o.jakarta_courier ? ` (${o.jakarta_courier})` : ''}${o.resi_number ? `<div style="font-size:10px;color:#888;margin-top:2px;">No. Resi: ${o.resi_number}</div>` : ''}</td><td class="inv-r">${fmt(fb.jakarta)}</td></tr>`);
 
     const adjRowsHtml = adjustments.map(a => {
       const amt = parseFloat(a.amount_idr) || 0;
