@@ -308,6 +308,15 @@
     </div>
   </div>
 
+  <div class="inner">
+    <div class="section" style="padding:24px 40px 0;border-bottom:none;">
+      <div class="note-blue" style="margin-top:0;">
+        🎒 <strong>Barang udah kamu beli / punya sendiri, cuma butuh titip kirim?</strong> Pas isi form order, pilih tipe barang <strong>"Titip Kirim"</strong> — nggak ada harga barang yang kami tagih di situ, cuma ongkir (dihitung sama seperti barang biasa, dari CBM/berat) dan handling fee tergantung metode. Bisa dipakai di ketiga metode pengiriman: Sea Freight, Hand-Carry, maupun Air Cargo.
+        <div id="shipping-only-fee-note" style="margin-top:8px;font-size:12.5px;color:#3A5A9C;"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="mode-tabs" style="max-width:420px;">
     <button class="mode-tab active" id="tab-regular" onclick="switchMode('regular')">📦 Regular Item</button>
     <button class="mode-tab" id="tab-garment" onclick="switchMode('garment')">👕 Garment</button>
@@ -417,7 +426,7 @@
         <div class="service-half">
           <div class="service-sub">Minimum</div>
           <div class="service-num red" id="service-min-display">Rp 50rb</div>
-          <div class="service-desc">per item / per transaksi</div>
+          <div class="service-desc">digabung per order, bukan per barang</div>
         </div>
       </div>
       <div class="service-foot" id="service-foot-text"></div>
@@ -711,7 +720,7 @@
 
     <div class="section">
       <div class="section-label"><div class="section-num">·</div><div class="section-title">Service Fee</div></div>
-      <p style="font-size:13px;color:var(--muted);line-height:1.6">Sama seperti metode lain: biaya jasa beli, pengecekan barang saat kami terima, dan koordinasi pengiriman. Regular Item pakai skema yang sama dengan Sea Freight (10% harga, minimum flat). Garment pakai skema garment (10% harga, minimum flat lebih kecil untuk barang murah).</p>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6">Sama seperti metode lain: biaya jasa beli, pengecekan barang saat kami terima, dan koordinasi pengiriman. Regular Item pakai skema yang sama dengan Sea Freight (10% harga, minimum flat). Garment pakai skema garment (10% harga, minimum flat lebih kecil untuk barang murah). <strong style="color:var(--ink);">Kalau order kamu ada beberapa barang regular sekaligus, minimum flat-nya digabung jadi satu untuk seluruh order — bukan dikenakan per barang.</strong></p>
     </div>
 
     <div class="section">
@@ -816,6 +825,9 @@
     sea_available: 1,
     handcarry_available: 1,
     air_available: 1,
+    shipping_only_waive_fee_sea: 0,
+    shipping_only_waive_fee_handcarry: 1,
+    shipping_only_waive_fee_air: 0,
   };
   let GARMENT_CATS = [];
   let wMethod = 'handcarry';
@@ -847,6 +859,7 @@
       ];
     }
     renderStaticExplainers();
+    renderShippingOnlyNote();
     buildGarmentReferenceTable();
     if (document.getElementById('garment-rows').children.length === 0) addGarmentRow();
     renderWeightGarmentCatOptions();
@@ -878,7 +891,8 @@
       `Barang <strong style="color:var(--ink)">di bawah ${fmt(CFG.service_fee_min_dimension / CFG.service_fee_rate_dimension)}</strong> → kena flat ${fmt(CFG.service_fee_min_dimension)} &nbsp;·&nbsp;
        Barang <strong style="color:var(--ink)">di atas ${fmt(CFG.service_fee_min_dimension / CFG.service_fee_rate_dimension)}</strong> → kena ${(CFG.service_fee_rate_dimension*100)}% normal`;
     document.getElementById('service-example-note').innerHTML =
-      `Contoh: Barang Rp 300.000 → service fee <strong>${fmt(CFG.service_fee_min_dimension)}</strong> (minimum). &nbsp; Barang Rp 800.000 → service fee <strong>${fmt(800000 * CFG.service_fee_rate_dimension)}</strong> (${CFG.service_fee_rate_dimension*100}%).`;
+      `Contoh: Barang Rp 300.000 → service fee <strong>${fmt(CFG.service_fee_min_dimension)}</strong> (minimum). &nbsp; Barang Rp 800.000 → service fee <strong>${fmt(800000 * CFG.service_fee_rate_dimension)}</strong> (${CFG.service_fee_rate_dimension*100}%).
+       <br><br>📦 <strong>Order dengan beberapa barang regular?</strong> Minimum digabung jadi SATU untuk seluruh order, bukan dikenakan per barang. Misal 2 barang kecil masing-masing Rp90.000 & Rp175.000 (${CFG.service_fee_rate_dimension*100}% masing-masing = ${fmt(90000*CFG.service_fee_rate_dimension)} & ${fmt(175000*CFG.service_fee_rate_dimension)}, total ${fmt(90000*CFG.service_fee_rate_dimension + 175000*CFG.service_fee_rate_dimension)}) — karena totalnya di bawah minimum, kamu cuma kena <strong>${fmt(CFG.service_fee_min_dimension)} sekali untuk seluruh order</strong>, bukan ${fmt(CFG.service_fee_min_dimension)} dikali jumlah barang.`;
 
     // Packing grid
     document.getElementById('packing-grid').innerHTML = `
@@ -915,6 +929,21 @@
       <tr class="hl"><td><strong>Service Fee</strong></td><td>${(CFG.service_fee_rate_dimension*100)}% harga, min. ${fmt(CFG.service_fee_min_dimension)}</td><td>Jasa beli, cek, koordinasi pengiriman</td></tr>
       <tr class="hl"><td><strong>Packing Fee</strong></td><td>Rp ${Math.round(CFG.packing_fee_small/1000)}rb / ${Math.round(CFG.packing_fee_medium/1000)}rb / ${Math.round(CFG.packing_fee_large/1000)}rb / ${Math.round(CFG.packing_fee_xl/1000)}rb</td><td><span class="tag tag-tier">Tier CBM</span></td></tr>
       <tr><td><strong>JNE ke kamu</strong></td><td>Sesuai tarif JNE</td><td><span class="tag tag-pass">Pass through</span>&nbsp; Berdasarkan kota tujuan</td></tr>`;
+  }
+
+  function renderShippingOnlyNote() {
+    const el = document.getElementById('shipping-only-fee-note');
+    if (!el) return;
+    const methods = [
+      { key: 'sea', label: 'Sea Freight', icon: '🚢' },
+      { key: 'handcarry', label: 'Hand-Carry', icon: '✈️' },
+      { key: 'air', label: 'Air Cargo', icon: '🛫' },
+    ];
+    const parts = methods.map(m => {
+      const waived = (CFG['shipping_only_waive_fee_' + m.key] || 0) == 1;
+      return `${m.icon} <strong>${m.label}</strong>: ${waived ? 'handling fee digratiskan' : `handling fee tetap ${fmt(CFG.service_fee_min_dimension)}`}`;
+    });
+    el.innerHTML = 'Handling fee per metode saat ini — ' + parts.join(' &nbsp;·&nbsp; ') + '. Ongkir/kargo tetap dihitung normal di ketiganya — cuma harga barangnya yang nol karena kamu sudah punya barangnya sendiri.';
   }
 
   function buildGarmentReferenceTable() {
